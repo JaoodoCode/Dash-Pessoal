@@ -10,6 +10,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <!-- SheetJS para processar arquivos XLSX -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- CryptoJS para hash de dados -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         :root {
             --primary: #00e8a5;
@@ -779,6 +781,204 @@
             margin: 0 auto 1.5rem;
         }
 
+        /* Novos estilos para sincronização inteligente */
+        .sync-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            background: rgba(0, 232, 165, 0.1);
+            color: var(--primary);
+        }
+
+        .sync-badge.live {
+            animation: pulse 2s infinite;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .sync-badge.idle {
+            background: rgba(148, 163, 184, 0.1);
+            color: var(--dark-text-secondary);
+        }
+
+        .sync-history {
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--dark-border);
+            border-radius: 6px;
+            padding: 0.5rem;
+            background: var(--dark-bg);
+        }
+
+        .sync-history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--dark-border);
+            font-size: 0.85rem;
+        }
+
+        .sync-history-item:last-child {
+            border-bottom: none;
+        }
+
+        .sync-history-time {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sync-history-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-success {
+            background-color: var(--success);
+        }
+
+        .status-error {
+            background-color: var(--danger);
+        }
+
+        .status-skipped {
+            background-color: var(--dark-text-secondary);
+        }
+
+        /* Modal de configuração avançada */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: var(--dark-card);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--dark-border);
+            animation: scaleIn 0.3s ease;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--dark-text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+        }
+
+        .sync-mode-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .sync-mode-btn {
+            padding: 1rem;
+            background: var(--dark-bg);
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            color: var(--dark-text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .sync-mode-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .sync-mode-btn.active {
+            border-color: var(--primary);
+            background: rgba(0, 232, 165, 0.1);
+            color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 232, 165, 0.2);
+        }
+
+        .sync-mode-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .sync-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(30, 37, 56, 0.5);
+            border-radius: 8px;
+        }
+
+        .sync-stat {
+            text-align: center;
+        }
+
+        .sync-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .sync-stat-label {
+            font-size: 0.8rem;
+            color: var(--dark-text-secondary);
+        }
+
         /* Animations */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -832,6 +1032,10 @@
             .stats-cards {
                 grid-template-columns: repeat(2, 1fr);
             }
+            
+            .sync-mode-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
@@ -861,6 +1065,10 @@
             .insights-grid, .budget-grid, .config-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .sync-mode-buttons {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -879,6 +1087,9 @@
                 </a>
                 <a href="#" class="nav-item" onclick="showSection('config')">
                     <i class="fas fa-cog"></i> Configurações
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('sync')">
+                    <i class="fas fa-sync"></i> Sincronização
                 </a>
                 <a href="#" class="nav-item">
                     <i class="fas fa-chart-pie"></i> Análises
@@ -944,7 +1155,9 @@
         <main class="main-content">
             <!-- Header -->
             <div class="header">
-                <h2>Dashboard Financeiro</h2>
+                <h2>Dashboard Financeiro 
+                    <span class="sync-badge" id="sync-mode-badge">Manual</span>
+                </h2>
                 
                 <div class="date-range">
                     <span id="current-date-range">Nenhum período selecionado</span>
@@ -977,14 +1190,29 @@
                         </div>
                         
                         <div class="config-group">
-                            <label for="config-interval">Intervalo de Atualização (minutos)</label>
+                            <label for="config-sync-mode">Modo de Sincronização</label>
+                            <select id="config-sync-mode" class="config-input">
+                                <option value="manual">Manual (apenas quando clicar)</option>
+                                <option value="interval" selected>Intervalo Fixo</option>
+                                <option value="realtime">Tempo Real (Polling)</option>
+                                <option value="onchange">Apenas quando alterado</option>
+                            </select>
+                        </div>
+                        
+                        <div class="config-group">
+                            <label for="config-interval">Intervalo de Atualização (segundos)</label>
                             <input type="number" id="config-interval" class="config-input" 
-                                   value="5" min="1" max="60">
+                                   value="300" min="10" max="3600">
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="config-verify-change" checked>
+                            <label for="config-verify-change">Verificar alterações antes de atualizar</label>
                         </div>
                         
                         <div class="checkbox-group">
                             <input type="checkbox" id="config-auto-sync" checked>
-                            <label for="config-auto-sync">Atualização Automática</label>
+                            <label for="config-auto-sync">Sincronização Automática</label>
                         </div>
                         
                         <button class="btn-save-config" id="btn-save-config">
@@ -1017,6 +1245,104 @@
                             <label>Status da Conexão</label>
                             <div id="connection-status" style="color: var(--success); padding: 0.5rem 0;">
                                 <i class="fas fa-wifi"></i> Pronto para sincronizar
+                            </div>
+                        </div>
+                        
+                        <div class="config-group">
+                            <label>Estatísticas de Sincronização</label>
+                            <div style="padding: 0.5rem 0;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>Sincronizações bem-sucedidas:</span>
+                                    <span id="sync-success-count">0</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>Último hash de dados:</span>
+                                    <span id="last-data-hash" style="font-family: monospace; font-size: 0.8rem;">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sync Section (Hidden by default) -->
+            <div id="sync-section" class="config-section" style="display: none;">
+                <div class="chart-title">
+                    <i class="fas fa-sync"></i> Controle de Sincronização
+                </div>
+                <div class="config-grid">
+                    <div>
+                        <div class="config-group">
+                            <label>Modo Atual</label>
+                            <div style="padding: 0.75rem; background: var(--dark-bg); border-radius: 6px; border: 1px solid var(--dark-border);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong id="current-sync-mode-display">Manual</strong>
+                                        <div style="font-size: 0.85rem; color: var(--dark-text-secondary);" id="current-sync-description">
+                                            Sincronize manualmente clicando no botão
+                                        </div>
+                                    </div>
+                                    <button class="btn-sync" onclick="showSyncModeModal()">
+                                        <i class="fas fa-sliders-h"></i> Alterar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="config-group">
+                            <label>Próxima Sincronização</label>
+                            <div style="padding: 0.75rem; background: var(--dark-bg); border-radius: 6px; border: 1px solid var(--dark-border);">
+                                <div style="font-size: 1.25rem; font-weight: 600; color: var(--primary); text-align: center;" id="next-sync-time">
+                                    --:--
+                                </div>
+                                <div style="font-size: 0.85rem; color: var(--dark-text-secondary); text-align: center;">
+                                    Tempo restante
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="config-group">
+                            <label>Controle Manual</label>
+                            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                <button class="btn-sync" onclick="forceSync()">
+                                    <i class="fas fa-redo"></i> Forçar Sincronização
+                                </button>
+                                <button class="btn-import" onclick="stopAutoSync()">
+                                    <i class="fas fa-stop"></i> Parar Sincronização
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="config-group">
+                            <label>Histórico de Sincronização</label>
+                            <div class="sync-history" id="sync-history">
+                                <div class="sync-history-item">
+                                    <span class="sync-history-time">--:--</span>
+                                    <span class="sync-history-status">
+                                        <span class="status-dot status-skipped"></span>
+                                        Nenhuma sincronização ainda
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="config-group">
+                            <label>Status em Tempo Real</label>
+                            <div style="padding: 0.75rem; background: var(--dark-bg); border-radius: 6px; border: 1px solid var(--dark-border);">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>Estado:</span>
+                                    <span id="realtime-status" style="color: var(--success);">Inativo</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>Polling ativo:</span>
+                                    <span id="polling-status" style="color: var(--warning);">Não</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Última verificação:</span>
+                                    <span id="last-check-time" style="font-size: 0.85rem;">--:--</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1199,31 +1525,134 @@
         </main>
     </div>
 
+    <!-- Modal para alterar modo de sincronização -->
+    <div id="sync-mode-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-sliders-h"></i>
+                    Configurar Modo de Sincronização
+                </div>
+                <button class="close-modal" onclick="closeSyncModeModal()">&times;</button>
+            </div>
+            
+            <div class="sync-mode-buttons">
+                <button class="sync-mode-btn" onclick="setSyncMode('manual')">
+                    <i class="sync-mode-icon fas fa-hand-paper"></i>
+                    Manual
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem;">
+                        Apenas quando você clicar
+                    </div>
+                </button>
+                
+                <button class="sync-mode-btn active" onclick="setSyncMode('interval')">
+                    <i class="sync-mode-icon fas fa-clock"></i>
+                    Intervalo
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem;">
+                        A cada X segundos
+                    </div>
+                </button>
+                
+                <button class="sync-mode-btn" onclick="setSyncMode('realtime')">
+                    <i class="sync-mode-icon fas fa-bolt"></i>
+                    Tempo Real
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem;">
+                        Polling rápido (10s)
+                    </div>
+                </button>
+                
+                <button class="sync-mode-btn" onclick="setSyncMode('onchange')">
+                    <i class="sync-mode-icon fas fa-redo-alt"></i>
+                    Quando Alterado
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem;">
+                        Detecta mudanças
+                    </div>
+                </button>
+                
+                <button class="sync-mode-btn" onclick="setSyncMode('smart')">
+                    <i class="sync-mode-icon fas fa-brain"></i>
+                    Inteligente
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem;">
+                        Ajusta automaticamente
+                    </div>
+                </button>
+                
+                <button class="sync-mode-btn" onclick="setSyncMode('websocket')">
+                    <i class="sync-mode-icon fas fa-plug"></i>
+                    WebSocket
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem;">
+                        Conexão persistente
+                    </div>
+                </button>
+            </div>
+            
+            <div class="config-group">
+                <label for="modal-interval">Intervalo (segundos)</label>
+                <input type="number" id="modal-interval" class="config-input" value="300" min="10" max="3600">
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="modal-verify-change" checked>
+                <label for="modal-verify-change">Verificar hash antes de atualizar</label>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="modal-notifications">
+                <label for="modal-notifications">Notificar quando dados forem atualizados</label>
+            </div>
+            
+            <button class="btn-save-config" style="width: 100%; margin-top: 1.5rem;" onclick="saveSyncMode()">
+                <i class="fas fa-check"></i> Aplicar Modo de Sincronização
+            </button>
+        </div>
+    </div>
+
     <script>
         // Data structure
         let transactions = [];
-        let budgets = new Map(); // Map de categoria -> limite
+        let budgets = new Map();
         let filteredTransactions = [];
         let charts = {};
         let dataLoaded = false;
         let syncInterval = null;
         let syncTimerInterval = null;
-        let timeUntilNextSync = 300; // 5 minutos em segundos
+        let timeUntilNextSync = 300;
         let lastSyncTime = null;
         let isSyncing = false;
+        let syncHistory = [];
+        let syncStats = {
+            success: 0,
+            failed: 0,
+            skipped: 0,
+            total: 0
+        };
+        let lastDataHash = null;
+        let lastSpreadsheetETag = null;
+        let lastSpreadsheetContent = null;
+        let websocketConnection = null;
+        let pollingInterval = null;
+        let realtimeSyncActive = false;
         
-        // Configurações padrão
+        // Configurações avançadas
         const defaultConfig = {
             spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT__lQH2yV7BNhYIUJ-FLdJx-0vlicZ65jZjIIpEe4oZUGw0r26jHXE3MdjpCLS7heLx95_ApXz3OVu/pubhtml',
             autoSync: true,
-            syncInterval: 5 // minutos
+            syncInterval: 300,
+            syncMode: 'interval',
+            verifyChanges: true,
+            notifications: true,
+            smartSync: {
+                activeHours: { start: 8, end: 22 },
+                maxInterval: 3600,
+                minInterval: 10
+            }
         };
         
-        // Carregar configurações salvas
+        // Carregar configurações
         function loadConfig() {
             const savedConfig = localStorage.getItem('finDashConfig');
             if (savedConfig) {
-                return JSON.parse(savedConfig);
+                return { ...defaultConfig, ...JSON.parse(savedConfig) };
             }
             return defaultConfig;
         }
@@ -1238,29 +1667,313 @@
             document.getElementById('config-url').value = config.spreadsheetUrl;
             document.getElementById('config-interval').value = config.syncInterval;
             document.getElementById('config-auto-sync').checked = config.autoSync;
+            document.getElementById('config-sync-mode').value = config.syncMode;
+            document.getElementById('config-verify-change').checked = config.verifyChanges;
             
-            if (config.autoSync) {
-                startAutoSync(config.syncInterval);
+            updateSyncModeDisplay(config.syncMode);
+            setupSyncMode(config);
+        }
+        
+        // Configurar modo de sincronização
+        function setupSyncMode(config) {
+            // Parar sincronizações existentes
+            stopAllSync();
+            
+            if (!config.autoSync || config.syncMode === 'manual') {
+                updateSyncModeBadge('manual');
+                return;
+            }
+            
+            switch(config.syncMode) {
+                case 'interval':
+                    startIntervalSync(config.syncInterval);
+                    updateSyncModeBadge('interval');
+                    break;
+                    
+                case 'realtime':
+                    startRealtimeSync();
+                    updateSyncModeBadge('realtime');
+                    break;
+                    
+                case 'onchange':
+                    startOnChangeSync(config.syncInterval);
+                    updateSyncModeBadge('onchange');
+                    break;
+                    
+                case 'smart':
+                    startSmartSync(config);
+                    updateSyncModeBadge('smart');
+                    break;
+                    
+                case 'websocket':
+                    if ('WebSocket' in window) {
+                        startWebSocketSync(config);
+                    } else {
+                        showNotification('WebSocket não suportado. Usando polling em tempo real.', 'warning');
+                        startRealtimeSync();
+                    }
+                    updateSyncModeBadge('websocket');
+                    break;
+            }
+        }
+        
+        // Iniciar sincronização por intervalo
+        function startIntervalSync(intervalSeconds) {
+            timeUntilNextSync = intervalSeconds;
+            startSyncTimer(intervalSeconds);
+            
+            syncInterval = setInterval(() => {
+                if (!isSyncing) {
+                    loadFromWeb();
+                }
+            }, intervalSeconds * 1000);
+        }
+        
+        // Iniciar sincronização em tempo real
+        function startRealtimeSync() {
+            timeUntilNextSync = 10;
+            realtimeSyncActive = true;
+            
+            pollingInterval = setInterval(() => {
+                if (!isSyncing) {
+                    loadFromWeb({ skipIfUnchanged: true });
+                }
+            }, 10000);
+            
+            startSyncTimer(10);
+            
+            document.getElementById('polling-status').textContent = 'Sim';
+            document.getElementById('realtime-status').textContent = 'Ativo';
+        }
+        
+        // Iniciar sincronização apenas quando houver alterações
+        function startOnChangeSync(checkInterval) {
+            timeUntilNextSync = checkInterval;
+            startSyncTimer(checkInterval);
+            
+            syncInterval = setInterval(() => {
+                if (!isSyncing) {
+                    checkForChanges().then(hasChanged => {
+                        if (hasChanged) {
+                            loadFromWeb();
+                        } else {
+                            addToSyncHistory('skipped', 'Nenhuma alteração detectada');
+                            updateSyncTimerDisplay();
+                        }
+                    });
+                }
+            }, checkInterval * 1000);
+            
+            document.getElementById('polling-status').textContent = 'Sim';
+            document.getElementById('realtime-status').textContent = 'Monitorando';
+        }
+        
+        // Iniciar sincronização inteligente
+        function startSmartSync(config) {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const { start, end } = config.smartSync.activeHours;
+            
+            let interval = config.syncInterval;
+            
+            if (currentHour >= start && currentHour <= end) {
+                interval = config.syncInterval;
+            } else {
+                interval = Math.min(config.syncInterval * 3, config.smartSync.maxInterval);
+            }
+            
+            timeUntilNextSync = interval;
+            startSyncTimer(interval);
+            
+            syncInterval = setInterval(() => {
+                if (!isSyncing) {
+                    loadFromWeb({ skipIfUnchanged: true });
+                }
+            }, interval * 1000);
+            
+            document.getElementById('polling-status').textContent = 'Sim';
+            document.getElementById('realtime-status').textContent = 'Inteligente';
+        }
+        
+        // Tentar WebSocket para sincronização em tempo real
+        function startWebSocketSync(config) {
+            showNotification('WebSocket: Modo simulado (usando polling rápido)', 'info');
+            startRealtimeSync();
+        }
+        
+        // Iniciar timer de sincronização
+        function startSyncTimer(intervalSeconds) {
+            if (syncTimerInterval) {
+                clearInterval(syncTimerInterval);
+            }
+            
+            timeUntilNextSync = intervalSeconds;
+            updateSyncTimerDisplay();
+            
+            syncTimerInterval = setInterval(() => {
+                timeUntilNextSync--;
+                if (timeUntilNextSync <= 0) {
+                    resetSyncTimer();
+                }
+                updateSyncTimerDisplay();
+            }, 1000);
+        }
+        
+        // Atualizar display do timer
+        function updateSyncTimerDisplay() {
+            const syncTimerEl = document.getElementById('sync-timer');
+            const nextSyncTimeEl = document.getElementById('next-sync-time');
+            
+            const minutes = Math.floor(timeUntilNextSync / 60);
+            const seconds = timeUntilNextSync % 60;
+            const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (syncTimerEl) syncTimerEl.textContent = `Próxima: ${timeStr}`;
+            if (nextSyncTimeEl) nextSyncTimeEl.textContent = timeStr;
+            
+            document.getElementById('last-check-time').textContent = 
+                new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        // Resetar timer
+        function resetSyncTimer() {
+            const config = loadConfig();
+            let interval = config.syncInterval;
+            
+            if (config.syncMode === 'realtime') {
+                interval = 10;
+            } else if (config.syncMode === 'onchange') {
+                interval = config.syncInterval;
+            }
+            
+            timeUntilNextSync = interval;
+            updateSyncTimerDisplay();
+        }
+        
+        // Parar todas as sincronizações
+        function stopAllSync() {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                syncInterval = null;
+            }
+            if (syncTimerInterval) {
+                clearInterval(syncTimerInterval);
+                syncTimerInterval = null;
+            }
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+            if (websocketConnection) {
+                websocketConnection.close();
+                websocketConnection = null;
+            }
+            
+            realtimeSyncActive = false;
+            document.getElementById('polling-status').textContent = 'Não';
+            document.getElementById('realtime-status').textContent = 'Inativo';
+        }
+        
+        // Forçar sincronização manual
+        function forceSync() {
+            loadFromWeb({ force: true });
+        }
+        
+        // Parar sincronização automática
+        function stopAutoSync() {
+            stopAllSync();
+            const config = loadConfig();
+            config.autoSync = false;
+            saveConfig(config);
+            applyConfigToUI(config);
+            showNotification('Sincronização automática desativada', 'warning');
+        }
+        
+        // Verificar se houve alterações na planilha
+        async function checkForChanges() {
+            const config = loadConfig();
+            
+            try {
+                const headResponse = await fetch(config.spreadsheetUrl, { method: 'HEAD' });
+                
+                if (headResponse.ok) {
+                    const currentETag = headResponse.headers.get('ETag');
+                    const lastModified = headResponse.headers.get('Last-Modified');
+                    
+                    if (currentETag && lastSpreadsheetETag !== currentETag) {
+                        lastSpreadsheetETag = currentETag;
+                        return true;
+                    }
+                }
+                
+                const arrayBuffer = await downloadSpreadsheet(config.spreadsheetUrl);
+                const currentHash = calculateDataHash(arrayBuffer);
+                
+                if (lastDataHash && currentHash === lastDataHash) {
+                    return false;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Erro ao verificar alterações:', error);
+                return false;
+            }
+        }
+        
+        // Calcular hash dos dados
+        function calculateDataHash(data) {
+            if (data instanceof ArrayBuffer) {
+                const wordArray = CryptoJS.lib.WordArray.create(data);
+                return CryptoJS.MD5(wordArray).toString();
+            } else if (typeof data === 'string') {
+                return CryptoJS.MD5(data).toString();
+            }
+            return null;
+        }
+        
+        // Baixar planilha com verificação de cache
+        async function downloadSpreadsheet(url) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    signal: controller.signal,
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                lastSpreadsheetETag = response.headers.get('ETag');
+                
+                return await response.arrayBuffer();
+            } catch (error) {
+                clearTimeout(timeoutId);
+                throw error;
             }
         }
         
         // Converter URL do Google Sheets para formato de download
         function convertToDownloadUrl(viewUrl) {
-            // Se já for uma URL de download, retornar como está
             if (viewUrl.includes('pub?output=xlsx') || viewUrl.includes('export?format=xlsx')) {
                 return viewUrl;
             }
             
-            // Converter URL de visualização para URL de download
             if (viewUrl.includes('docs.google.com/spreadsheets/d/')) {
-                // Formato: https://docs.google.com/spreadsheets/d/[ID]/edit?usp=sharing
                 const match = viewUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
                 if (match) {
                     const fileId = match[1];
                     return `https://docs.google.com/spreadsheets/d/${fileId}/export?format=xlsx`;
                 }
             } else if (viewUrl.includes('docs.google.com/spreadsheets/d/e/')) {
-                // Formato publicado: https://docs.google.com/spreadsheets/d/e/[ID]/pubhtml
                 const match = viewUrl.match(/\/spreadsheets\/d\/e\/([a-zA-Z0-9_-]+)/);
                 if (match) {
                     const fileId = match[1];
@@ -1268,30 +1981,7 @@
                 }
             }
             
-            // Se não conseguir converter, retornar a URL original
             return viewUrl;
-        }
-        
-        // Baixar planilha da web
-        async function downloadSpreadsheet(url) {
-            try {
-                // Converter para URL de download
-                const downloadUrl = convertToDownloadUrl(url);
-                
-                // Fazer requisição
-                const response = await fetch(downloadUrl);
-                
-                if (!response.ok) {
-                    throw new Error(`Erro HTTP: ${response.status}`);
-                }
-                
-                // Obter dados como array buffer
-                const arrayBuffer = await response.arrayBuffer();
-                return arrayBuffer;
-            } catch (error) {
-                console.error('Erro ao baixar planilha:', error);
-                throw error;
-            }
         }
         
         // Parse Excel file from array buffer
@@ -1299,10 +1989,8 @@
             try {
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 
-                // Processar a aba de transações (Página1)
                 let transactionsSheet = workbook.Sheets['Página1'];
                 if (!transactionsSheet) {
-                    // Tentar encontrar a primeira aba que não seja "Metas"
                     const sheetNames = workbook.SheetNames;
                     const transactionSheetName = sheetNames.find(name => 
                         name.toLowerCase() !== 'metas' && 
@@ -1317,18 +2005,15 @@
                     throw new Error('Não foi possível encontrar a aba de transações.');
                 }
                 
-                // Converter a aba de transações para JSON
                 const transactionsData = XLSX.utils.sheet_to_json(transactionsSheet, {
                     header: 1,
                     raw: false,
                     dateNF: 'yyyy-mm-dd'
                 });
                 
-                // Processar cabeçalho e dados
                 const headers = transactionsData[0];
                 const transactionsRows = transactionsData.slice(1);
                 
-                // Encontrar índices das colunas
                 const dataIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('data'));
                 const descricaoIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('descrição') || h && h.toString().toLowerCase().includes('descricao'));
                 const valorIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('valor'));
@@ -1336,32 +2021,26 @@
                 const tipoIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('tipo'));
                 const timestampIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('timestamp'));
                 
-                // Validar colunas necessárias
                 if (dataIndex === -1 || descricaoIndex === -1 || valorIndex === -1 || categoriaIndex === -1 || tipoIndex === -1) {
                     throw new Error('Formato de arquivo inválido. Colunas necessárias não encontradas.');
                 }
                 
-                // Converter para formato padrão
                 const formattedTransactions = transactionsRows
                     .filter(row => row && row.length > 0)
                     .map(row => {
-                        // Formatar data (remover hora se existir)
                         let dataStr = row[dataIndex];
                         if (dataStr instanceof Date) {
                             dataStr = dataStr.toISOString().split('T')[0];
                         } else if (typeof dataStr === 'string') {
-                            // Tentar extrair apenas a data
                             const dateMatch = dataStr.match(/(\d{4}-\d{2}-\d{2})/);
                             if (dateMatch) {
                                 dataStr = dateMatch[1];
                             }
                         }
                         
-                        // Converter para formato DD-MM-YYYY
                         if (dataStr && dataStr.includes('-')) {
                             const parts = dataStr.split('-');
                             if (parts.length === 3) {
-                                // Assumir formato YYYY-MM-DD
                                 dataStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
                             }
                         }
@@ -1375,9 +2054,8 @@
                             Timestamp: timestampIndex !== -1 ? row[timestampIndex] : ''
                         };
                     })
-                    .filter(t => t.Data && t.Descrição); // Filtrar linhas vazias
+                    .filter(t => t.Data && t.Descrição);
                 
-                // Processar a aba de metas
                 let budgetsData = [];
                 const metasSheet = workbook.Sheets['Metas'] || workbook.Sheets['Metas Orçamento'];
                 if (metasSheet) {
@@ -1416,79 +2094,6 @@
             }
         }
         
-        // Load data from web
-        async function loadFromWeb() {
-            if (isSyncing) return;
-            
-            const config = loadConfig();
-            const url = config.spreadsheetUrl;
-            
-            if (!url) {
-                showNotification('URL da planilha não configurada.', 'error');
-                return;
-            }
-            
-            isSyncing = true;
-            const syncBtn = document.getElementById('btn-sync');
-            const originalText = syncBtn.innerHTML;
-            syncBtn.innerHTML = '<i class="fas fa-sync spin"></i> Sincronizando...';
-            syncBtn.classList.add('syncing');
-            
-            try {
-                // Baixar planilha
-                const arrayBuffer = await downloadSpreadsheet(url);
-                
-                // Processar dados
-                const result = parseExcelFromArrayBuffer(arrayBuffer);
-                const { transactions: newTransactions, budgets: newBudgets } = result;
-                
-                if (!validateData(newTransactions)) {
-                    throw new Error('Formato de dados inválido.');
-                }
-                
-                // Atualizar dados
-                transactions = [...newTransactions];
-                filteredTransactions = [...transactions];
-                
-                // Atualizar orçamentos
-                budgets.clear();
-                newBudgets.forEach(b => {
-                    budgets.set(b.categoria, b.limite);
-                });
-                
-                // Atualizar interface
-                toggleDashboardSections(true);
-                resetFilters();
-                updateDashboard();
-                
-                // Atualizar última sincronização
-                lastSyncTime = new Date();
-                updateLastSyncDisplay();
-                
-                // Mostrar mensagem de sucesso
-                const budgetMsg = budgets.size > 0 ? ` e ${budgets.size} meta(s)` : '';
-                showNotification(`Sincronizado com sucesso! ${newTransactions.length} transação(ões)${budgetMsg} carregada(s).`, 'success');
-                
-                // Atualizar status
-                updateSyncStatus(true);
-                
-            } catch (error) {
-                console.error('Erro ao carregar da web:', error);
-                showNotification(`Erro ao sincronizar: ${error.message}`, 'error');
-                updateSyncStatus(false);
-                
-            } finally {
-                isSyncing = false;
-                syncBtn.innerHTML = originalText;
-                syncBtn.classList.remove('syncing');
-                
-                // Reiniciar timer de sincronização
-                if (config.autoSync) {
-                    resetSyncTimer();
-                }
-            }
-        }
-        
         // Parse CSV data
         function parseCSV(csvText) {
             const parsed = Papa.parse(csvText, {
@@ -1505,19 +2110,15 @@
                 return { transactions: [], budgets: [] };
             }
             
-            // Formatar datas do CSV
             const formattedTransactions = parsed.data.map(t => {
-                // Formatar data (remover hora se existir)
                 let dataStr = t.Data;
                 if (dataStr && dataStr.includes(' ')) {
                     dataStr = dataStr.split(' ')[0];
                 }
                 
-                // Converter para formato DD-MM-YYYY se estiver em YYYY-MM-DD
                 if (dataStr && dataStr.includes('-')) {
                     const parts = dataStr.split('-');
                     if (parts.length === 3 && parts[0].length === 4) {
-                        // Formato YYYY-MM-DD
                         dataStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
                     }
                 }
@@ -1530,15 +2131,99 @@
             
             return { 
                 transactions: formattedTransactions,
-                budgets: [] // CSV não tem metas
+                budgets: []
             };
+        }
+        
+        // Load data from web
+        async function loadFromWeb(options = {}) {
+            const { force = false, skipIfUnchanged = false } = options;
+            
+            if (isSyncing && !force) return;
+            
+            const config = loadConfig();
+            const url = config.spreadsheetUrl;
+            
+            if (!url) {
+                showNotification('URL da planilha não configurada.', 'error');
+                return;
+            }
+            
+            isSyncing = true;
+            const syncBtn = document.getElementById('btn-sync');
+            const originalText = syncBtn.innerHTML;
+            syncBtn.innerHTML = '<i class="fas fa-sync spin"></i> Sincronizando...';
+            syncBtn.classList.add('syncing');
+            
+            try {
+                if (config.verifyChanges && skipIfUnchanged && lastDataHash) {
+                    const hasChanged = await checkForChanges();
+                    if (!hasChanged) {
+                        addToSyncHistory('skipped', 'Nenhuma alteração detectada');
+                        showNotification('Dados já estão atualizados.', 'info');
+                        return;
+                    }
+                }
+                
+                const arrayBuffer = await downloadSpreadsheet(url);
+                const newHash = calculateDataHash(arrayBuffer);
+                
+                if (config.verifyChanges && lastDataHash && newHash === lastDataHash) {
+                    addToSyncHistory('skipped', 'Hash idêntico - sem alterações');
+                    showNotification('Dados não foram alterados desde a última sincronização.', 'info');
+                    return;
+                }
+                
+                const result = parseExcelFromArrayBuffer(arrayBuffer);
+                const { transactions: newTransactions, budgets: newBudgets } = result;
+                
+                if (!validateData(newTransactions)) {
+                    throw new Error('Formato de dados inválido.');
+                }
+                
+                transactions = [...newTransactions];
+                filteredTransactions = [...transactions];
+                lastDataHash = newHash;
+                
+                budgets.clear();
+                newBudgets.forEach(b => {
+                    budgets.set(b.categoria, b.limite);
+                });
+                
+                toggleDashboardSections(true);
+                resetFilters();
+                updateDashboard();
+                
+                lastSyncTime = new Date();
+                updateLastSyncDisplay();
+                
+                const budgetMsg = budgets.size > 0 ? ` e ${budgets.size} meta(s)` : '';
+                addToSyncHistory('success', `${newTransactions.length} transações${budgetMsg}`);
+                
+                if (config.notifications) {
+                    showNotification(`Dados atualizados! ${newTransactions.length} transações carregadas.`, 'success');
+                }
+                
+                updateSyncStatus(true);
+                
+            } catch (error) {
+                console.error('Erro ao sincronizar:', error);
+                addToSyncHistory('error', error.message);
+                showNotification(`Erro ao sincronizar: ${error.message}`, 'error');
+                updateSyncStatus(false);
+                
+            } finally {
+                isSyncing = false;
+                syncBtn.innerHTML = originalText;
+                syncBtn.classList.remove('syncing');
+                resetSyncTimer();
+            }
         }
         
         // Validate data
         function validateData(transactions) {
             if (transactions.length === 0) return false;
             
-            // Check for required columns
             const firstRow = transactions[0];
             const requiredColumns = ['Data', 'Descrição', 'Valor', 'Categoria', 'Tipo'];
             
@@ -1583,9 +2268,10 @@
             }
         }
         
-        // Show/hide config section
+        // Show/hide sections
         function showSection(sectionName) {
             const configSection = document.getElementById('config-section');
+            const syncSection = document.getElementById('sync-section');
             const overviewSection = document.getElementById('overview-section');
             const navItems = document.querySelectorAll('.nav-item');
             
@@ -1593,14 +2279,22 @@
                 item.classList.remove('active');
             });
             
-            if (sectionName === 'config') {
-                configSection.style.display = 'block';
-                overviewSection.style.display = 'none';
-                document.querySelector('.nav-item:nth-child(2)').classList.add('active');
-            } else {
-                configSection.style.display = 'none';
-                overviewSection.style.display = 'block';
-                document.querySelector('.nav-item:nth-child(1)').classList.add('active');
+            configSection.style.display = 'none';
+            syncSection.style.display = 'none';
+            overviewSection.style.display = 'none';
+            
+            switch(sectionName) {
+                case 'config':
+                    configSection.style.display = 'block';
+                    document.querySelector('.nav-item:nth-child(2)').classList.add('active');
+                    break;
+                case 'sync':
+                    syncSection.style.display = 'block';
+                    document.querySelector('.nav-item:nth-child(3)').classList.add('active');
+                    break;
+                default:
+                    overviewSection.style.display = 'block';
+                    document.querySelector('.nav-item:nth-child(1)').classList.add('active');
             }
         }
         
@@ -1643,58 +2337,201 @@
             }
         }
         
-        // Start auto sync timer
-        function startAutoSync(intervalMinutes) {
-            // Limpar intervalos anteriores
-            if (syncInterval) {
-                clearInterval(syncInterval);
-            }
-            if (syncTimerInterval) {
-                clearInterval(syncTimerInterval);
-            }
+        // Update sync mode badge
+        function updateSyncModeBadge(mode) {
+            const badge = document.getElementById('sync-mode-badge');
+            const display = document.getElementById('current-sync-mode-display');
+            const description = document.getElementById('current-sync-description');
             
-            // Converter minutos para segundos
-            timeUntilNextSync = intervalMinutes * 60;
-            
-            // Iniciar contador
-            updateSyncTimer();
-            syncTimerInterval = setInterval(updateSyncTimer, 1000);
-            
-            // Iniciar sincronização automática
-            syncInterval = setInterval(() => {
-                if (!isSyncing) {
-                    loadFromWeb();
+            const modes = {
+                manual: { 
+                    text: 'Manual', 
+                    desc: 'Sincronize manualmente clicando no botão',
+                    class: 'idle'
+                },
+                interval: { 
+                    text: 'Intervalo', 
+                    desc: 'Sincronizando a cada X segundos',
+                    class: ''
+                },
+                realtime: { 
+                    text: 'Tempo Real', 
+                    desc: 'Sincronização em tempo real ativa',
+                    class: 'live'
+                },
+                onchange: { 
+                    text: 'Quando Alterado', 
+                    desc: 'Detectando alterações na planilha',
+                    class: 'live'
+                },
+                smart: { 
+                    text: 'Inteligente', 
+                    desc: 'Sincronização adaptativa ativa',
+                    class: 'live'
+                },
+                websocket: { 
+                    text: 'WebSocket', 
+                    desc: 'Conexão em tempo real ativa',
+                    class: 'live'
                 }
-            }, intervalMinutes * 60000);
-        }
-        
-        // Reset sync timer
-        function resetSyncTimer() {
-            const config = loadConfig();
-            timeUntilNextSync = config.syncInterval * 60;
-            updateSyncTimer();
-        }
-        
-        // Update sync timer display
-        function updateSyncTimer() {
-            const syncTimerEl = document.getElementById('sync-timer');
+            };
             
-            if (timeUntilNextSync <= 0) {
-                syncTimerEl.textContent = 'Sincronizando...';
-                resetSyncTimer();
+            const modeInfo = modes[mode] || modes.manual;
+            
+            badge.textContent = modeInfo.text;
+            badge.className = `sync-badge ${modeInfo.class}`;
+            
+            if (display) display.textContent = modeInfo.text;
+            if (description) description.textContent = modeInfo.desc;
+        }
+        
+        // Update sync mode display
+        function updateSyncModeDisplay(mode) {
+            updateSyncModeBadge(mode);
+            
+            const realtimeStatus = document.getElementById('realtime-status');
+            const pollingStatus = document.getElementById('polling-status');
+            
+            if (mode === 'realtime' || mode === 'websocket') {
+                realtimeStatus.textContent = 'Ativo';
+                realtimeStatus.style.color = 'var(--success)';
+                pollingStatus.textContent = 'Sim';
+                pollingStatus.style.color = 'var(--success)';
+            } else if (mode === 'onchange' || mode === 'smart') {
+                realtimeStatus.textContent = 'Monitorando';
+                realtimeStatus.style.color = 'var(--warning)';
+                pollingStatus.textContent = 'Sim';
+                pollingStatus.style.color = 'var(--warning)';
             } else {
-                const minutes = Math.floor(timeUntilNextSync / 60);
-                const seconds = timeUntilNextSync % 60;
-                syncTimerEl.textContent = `Próxima: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-                timeUntilNextSync--;
+                realtimeStatus.textContent = 'Inativo';
+                realtimeStatus.style.color = 'var(--dark-text-secondary)';
+                pollingStatus.textContent = 'Não';
+                pollingStatus.style.color = 'var(--dark-text-secondary)';
             }
+        }
+        
+        // Adicionar ao histórico de sincronização
+        function addToSyncHistory(status, message = '') {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            const historyItem = {
+                time: timeStr,
+                status: status,
+                message: message,
+                timestamp: now.getTime()
+            };
+            
+            syncHistory.unshift(historyItem);
+            syncHistory = syncHistory.slice(0, 10);
+            
+            syncStats.total++;
+            if (status === 'success') syncStats.success++;
+            else if (status === 'error') syncStats.failed++;
+            else if (status === 'skipped') syncStats.skipped++;
+            
+            updateSyncHistoryDisplay();
+            updateSyncStatsDisplay();
+        }
+        
+        // Atualizar display do histórico
+        function updateSyncHistoryDisplay() {
+            const historyEl = document.getElementById('sync-history');
+            historyEl.innerHTML = '';
+            
+            if (syncHistory.length === 0) {
+                historyEl.innerHTML = `
+                    <div class="sync-history-item">
+                        <span class="sync-history-time">--:--</span>
+                        <span class="sync-history-status">
+                            <span class="status-dot status-skipped"></span>
+                            Nenhuma sincronização ainda
+                        </span>
+                    </div>
+                `;
+                return;
+            }
+            
+            syncHistory.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'sync-history-item';
+                
+                let statusClass = 'status-skipped';
+                if (item.status === 'success') statusClass = 'status-success';
+                else if (item.status === 'error') statusClass = 'status-error';
+                
+                itemEl.innerHTML = `
+                    <span class="sync-history-time">${item.time}</span>
+                    <span class="sync-history-status">
+                        <span class="status-dot ${statusClass}"></span>
+                        ${item.message || item.status}
+                    </span>
+                `;
+                
+                historyEl.appendChild(itemEl);
+            });
+        }
+        
+        // Atualizar estatísticas de sincronização
+        function updateSyncStatsDisplay() {
+            document.getElementById('sync-success-count').textContent = syncStats.success;
+            document.getElementById('last-data-hash').textContent = 
+                lastDataHash ? lastDataHash.substring(0, 8) + '...' : '-';
+        }
+        
+        // Modal para alterar modo de sincronização
+        function showSyncModeModal() {
+            const modal = document.getElementById('sync-mode-modal');
+            const config = loadConfig();
+            
+            document.getElementById('modal-interval').value = config.syncInterval;
+            document.getElementById('modal-verify-change').checked = config.verifyChanges;
+            document.getElementById('modal-notifications').checked = config.notifications;
+            
+            document.querySelectorAll('.sync-mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.sync-mode-btn[onclick="setSyncMode('${config.syncMode}')"]`)
+                .classList.add('active');
+            
+            modal.style.display = 'flex';
+        }
+        
+        function closeSyncModeModal() {
+            document.getElementById('sync-mode-modal').style.display = 'none';
+        }
+        
+        function setSyncMode(mode) {
+            document.querySelectorAll('.sync-mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.sync-mode-btn[onclick="setSyncMode('${mode}')"]`)
+                .classList.add('active');
+        }
+        
+        function saveSyncMode() {
+            const config = loadConfig();
+            config.syncMode = document.querySelector('.sync-mode-btn.active')
+                .getAttribute('onclick').match(/'([^']+)'/)[1];
+            config.syncInterval = parseInt(document.getElementById('modal-interval').value);
+            config.verifyChanges = document.getElementById('modal-verify-change').checked;
+            config.notifications = document.getElementById('modal-notifications').checked;
+            
+            saveConfig(config);
+            applyConfigToUI(config);
+            closeSyncModeModal();
+            
+            showNotification(`Modo de sincronização alterado para: ${config.syncMode}`, 'success');
         }
         
         // Update dashboard with current data
         function updateDashboard() {
             if (filteredTransactions.length === 0) {
                 if (dataLoaded) {
-                    // Show empty state for filtered data
                     document.getElementById('transactions-body').innerHTML = `
                         <tr>
                             <td colspan="5" style="text-align: center; padding: 2rem; color: #94a3b8;">
@@ -1730,7 +2567,6 @@
             
             const currentBalance = totalIncome - totalExpenses;
             
-            // Find highest expense
             const expenses = filteredTransactions.filter(t => t.Tipo === 'despesa');
             let highestExpense = 0;
             let highestExpenseCategory = 'Nenhuma';
@@ -1741,14 +2577,12 @@
                 highestExpenseCategory = highest.Categoria;
             }
             
-            // Update DOM elements
             document.getElementById('current-balance').textContent = formatCurrency(currentBalance);
             document.getElementById('total-income').textContent = formatCurrency(totalIncome);
             document.getElementById('total-expenses').textContent = formatCurrency(totalExpenses);
             document.getElementById('highest-expense').textContent = formatCurrency(highestExpense);
             document.getElementById('highest-expense-category').textContent = highestExpenseCategory;
             
-            // Update transaction count
             document.getElementById('transaction-count').textContent = filteredTransactions.length;
         }
         
@@ -1757,7 +2591,6 @@
             const budgetGrid = document.getElementById('budget-grid');
             budgetGrid.innerHTML = '';
             
-            // Se não houver metas definidas, mostrar mensagem
             if (budgets.size === 0) {
                 budgetGrid.innerHTML = `
                     <div class="budget-card">
@@ -1775,7 +2608,6 @@
                 return;
             }
             
-            // Calcular gastos por categoria
             const expensesByCategory = {};
             filteredTransactions
                 .filter(t => t.Tipo === 'despesa')
@@ -1786,7 +2618,6 @@
                     expensesByCategory[t.Categoria] += t.Valor;
                 });
             
-            // Criar cards para cada categoria com meta
             for (const [category, limit] of budgets) {
                 const spent = expensesByCategory[category] || 0;
                 const percentage = limit > 0 ? (spent / limit) * 100 : 0;
@@ -1836,7 +2667,6 @@
                 budgetGrid.appendChild(budgetCard);
             }
             
-            // Adicionar cards para categorias sem meta mas com gastos
             const categoriesWithSpending = Object.keys(expensesByCategory);
             const categoriesWithoutBudget = categoriesWithSpending.filter(cat => !budgets.has(cat));
             
@@ -1863,7 +2693,6 @@
         
         // Update charts
         function updateCharts() {
-            // Destroy previous charts
             if (charts.trendChart) {
                 charts.trendChart.destroy();
             }
@@ -1970,7 +2799,6 @@
         function updateTrendChart() {
             const ctx = document.getElementById('trendChart').getContext('2d');
             
-            // Group transactions by day
             const transactionsByDay = {};
             filteredTransactions.forEach(t => {
                 const date = t.Data;
@@ -1985,12 +2813,10 @@
                 }
             });
             
-            // Sort dates
             const dates = Object.keys(transactionsByDay).sort((a, b) => {
                 return new Date(a.split('-').reverse().join('-')) - new Date(b.split('-').reverse().join('-'));
             });
             
-            // Prepare data
             const incomeData = dates.map(date => transactionsByDay[date].income);
             const expenseData = dates.map(date => transactionsByDay[date].expense);
             
@@ -2063,7 +2889,6 @@
         function updateCategoryChart() {
             const ctx = document.getElementById('categoryChart').getContext('2d');
             
-            // Group expenses by category
             const expensesByCategory = {};
             filteredTransactions
                 .filter(t => t.Tipo === 'despesa')
@@ -2074,7 +2899,6 @@
                     expensesByCategory[t.Categoria] += t.Valor;
                 });
             
-            // Se não houver despesas, verificar receitas
             if (Object.keys(expensesByCategory).length === 0) {
                 const incomeByCategory = {};
                 filteredTransactions
@@ -2086,7 +2910,6 @@
                         incomeByCategory[t.Categoria] += t.Valor;
                     });
                 
-                // Preparar dados para gráfico de receitas
                 const categories = Object.keys(incomeByCategory);
                 const values = Object.values(incomeByCategory);
                 
@@ -2095,7 +2918,6 @@
                     return;
                 }
                 
-                // Gerar cores
                 const colors = generateColors(categories.length);
                 
                 charts.categoryChart = new Chart(ctx, {
@@ -2140,11 +2962,9 @@
                 return;
             }
             
-            // Preparar dados para gráfico de despesas
             const categories = Object.keys(expensesByCategory);
             const values = Object.values(expensesByCategory);
             
-            // Gerar cores
             const colors = generateColors(categories.length);
             
             charts.categoryChart = new Chart(ctx, {
@@ -2179,468 +2999,424 @@
                                     const value = context.raw || 0;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+                                        return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+                                    }
                                 }
                             }
                         }
                     }
+                });
+            }
+            
+            // Generate colors for charts
+            function generateColors(count) {
+                const baseColor = [0, 232, 165];
+                const colors = [];
+                
+                for (let i = 0; i < count; i++) {
+                    const r = Math.min(255, baseColor[0] + (i * 30));
+                    const g = Math.min(255, baseColor[1] - (i * 20));
+                    const b = Math.min(255, baseColor[2] + (i * 10));
+                    colors.push(`rgba(${r}, ${g}, ${b}, 0.7)`);
                 }
-            });
-        }
-        
-        // Generate colors for charts
-        function generateColors(count) {
-            const baseColor = [0, 232, 165]; // #00e8a5
-            const colors = [];
-            
-            for (let i = 0; i < count; i++) {
-                // Create variations of the base color
-                const r = Math.min(255, baseColor[0] + (i * 30));
-                const g = Math.min(255, baseColor[1] - (i * 20));
-                const b = Math.min(255, baseColor[2] + (i * 10));
-                colors.push(`rgba(${r}, ${g}, ${b}, 0.7)`);
-            }
-            
-            return colors;
-        }
-        
-        // Update transactions table
-        function updateTransactionsTable() {
-            const tbody = document.getElementById('transactions-body');
-            tbody.innerHTML = '';
-            
-            // Sort by date (newest first)
-            const sortedTransactions = [...filteredTransactions].sort((a, b) => {
-                return new Date(b.Timestamp || b.Data) - new Date(a.Timestamp || a.Data);
-            });
-            
-            // Display only the first 20 transactions
-            const displayTransactions = sortedTransactions.slice(0, 20);
-            
-            displayTransactions.forEach(transaction => {
-                const row = document.createElement('tr');
                 
-                row.innerHTML = `
-                    <td>${transaction.Data}</td>
-                    <td>${transaction.Descrição}</td>
-                    <td><span class="category-badge">${transaction.Categoria}</span></td>
-                    <td><span class="type-badge type-${transaction.Tipo}">${transaction.Tipo === 'despesa' ? 'Despesa' : 'Receita'}</span></td>
-                    <td class="value-cell">${formatCurrency(transaction.Valor)}</td>
-                `;
+                return colors;
+            }
+            
+            // Update transactions table
+            function updateTransactionsTable() {
+                const tbody = document.getElementById('transactions-body');
+                tbody.innerHTML = '';
                 
-                tbody.appendChild(row);
-            });
-            
-            // Add message if no transactions
-            if (displayTransactions.length === 0) {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td colspan="5" style="text-align: center; padding: 2rem; color: #94a3b8;">
-                        Nenhuma transação encontrada com os filtros atuais.
-                    </td>
-                `;
-                tbody.appendChild(row);
-            }
-        }
-        
-        // Update insights
-        function updateInsights() {
-            const expenses = filteredTransactions.filter(t => t.Tipo === 'despesa');
-            const incomes = filteredTransactions.filter(t => t.Tipo === 'receita');
-            
-            // Calculate average expense
-            const avgExpense = expenses.length > 0 
-                ? expenses.reduce((sum, t) => sum + t.Valor, 0) / expenses.length 
-                : 0;
-            
-            // Find high spending
-            const highSpendingThreshold = avgExpense * 2;
-            const highSpending = expenses.filter(t => t.Valor > highSpendingThreshold);
-            
-            // Update spending pattern insight
-            const spendingPatternEl = document.getElementById('spending-pattern');
-            if (expenses.length === 0 && incomes.length === 0) {
-                spendingPatternEl.textContent = 'Carregue dados para análise de padrões.';
-            } else if (expenses.length === 0) {
-                spendingPatternEl.textContent = 'Você só tem receitas registradas. Considere registrar suas despesas para uma análise completa.';
-            } else {
-                const topCategory = getTopCategory(expenses);
-                spendingPatternEl.textContent = `Seus gastos são concentrados em ${topCategory.category} (${topCategory.percentage}% do total).`;
-            }
-            
-            // Update high spending insight
-            const highSpendingEl = document.getElementById('high-spending');
-            if (expenses.length === 0) {
-                highSpendingEl.textContent = 'Nenhuma despesa registrada.';
-            } else if (highSpending.length === 0) {
-                highSpendingEl.textContent = 'Nenhum gasto excessivo identificado.';
-            } else {
-                const highest = highSpending.reduce((max, t) => t.Valor > max.Valor ? t : max, highSpending[0]);
-                highSpendingEl.textContent = `Você gastou ${formatCurrency(highest.Valor)} em ${highest.Descrição}, que é ${Math.round(highest.Valor / avgExpense)}x acima da sua média de gastos.`;
-            }
-            
-            // Update goals status insight
-            const goalsStatusEl = document.getElementById('goals-status');
-            if (budgets.size === 0) {
-                goalsStatusEl.textContent = 'Nenhuma meta definida. Adicione metas na aba "Metas" do arquivo Excel.';
-            } else {
-                // Verificar quais metas foram ultrapassadas
-                const expensesByCategory = {};
-                expenses.forEach(t => {
-                    if (!expensesByCategory[t.Categoria]) {
-                        expensesByCategory[t.Categoria] = 0;
-                    }
-                    expensesByCategory[t.Categoria] += t.Valor;
+                const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+                    return new Date(b.Timestamp || b.Data) - new Date(a.Timestamp || a.Data);
                 });
                 
-                const exceededBudgets = [];
-                for (const [category, limit] of budgets) {
-                    const spent = expensesByCategory[category] || 0;
-                    if (spent > limit) {
-                        exceededBudgets.push({
-                            category,
-                            spent,
-                            limit,
-                            excess: spent - limit
-                        });
-                    }
-                }
+                const displayTransactions = sortedTransactions.slice(0, 20);
                 
-                if (exceededBudgets.length === 0) {
-                    goalsStatusEl.textContent = 'Todas as metas estão dentro do limite definido. Bom trabalho!';
+                displayTransactions.forEach(transaction => {
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${transaction.Data}</td>
+                        <td>${transaction.Descrição}</td>
+                        <td><span class="category-badge">${transaction.Categoria}</span></td>
+                        <td><span class="type-badge type-${transaction.Tipo}">${transaction.Tipo === 'despesa' ? 'Despesa' : 'Receita'}</span></td>
+                        <td class="value-cell">${formatCurrency(transaction.Valor)}</td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+                
+                if (displayTransactions.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td colspan="5" style="text-align: center; padding: 2rem; color: #94a3b8;">
+                            Nenhuma transação encontrada com os filtros atuais.
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            }
+            
+            // Update insights
+            function updateInsights() {
+                const expenses = filteredTransactions.filter(t => t.Tipo === 'despesa');
+                const incomes = filteredTransactions.filter(t => t.Tipo === 'receita');
+                
+                const avgExpense = expenses.length > 0 
+                    ? expenses.reduce((sum, t) => sum + t.Valor, 0) / expenses.length 
+                    : 0;
+                
+                const highSpendingThreshold = avgExpense * 2;
+                const highSpending = expenses.filter(t => t.Valor > highSpendingThreshold);
+                
+                const spendingPatternEl = document.getElementById('spending-pattern');
+                if (expenses.length === 0 && incomes.length === 0) {
+                    spendingPatternEl.textContent = 'Carregue dados para análise de padrões.';
+                } else if (expenses.length === 0) {
+                    spendingPatternEl.textContent = 'Você só tem receitas registradas. Considere registrar suas despesas para uma análise completa.';
                 } else {
-                    const exceededList = exceededBudgets.map(b => 
-                        `${b.category} (${formatCurrency(b.excess)} acima)`
-                    ).join(', ');
-                    goalsStatusEl.textContent = `Meta(s) excedida(s): ${exceededList}.`;
+                    const topCategory = getTopCategory(expenses);
+                    spendingPatternEl.textContent = `Seus gastos são concentrados em ${topCategory.category} (${topCategory.percentage}% do total).`;
+                }
+                
+                const highSpendingEl = document.getElementById('high-spending');
+                if (expenses.length === 0) {
+                    highSpendingEl.textContent = 'Nenhuma despesa registrada.';
+                } else if (highSpending.length === 0) {
+                    highSpendingEl.textContent = 'Nenhum gasto excessivo identificado.';
+                } else {
+                    const highest = highSpending.reduce((max, t) => t.Valor > max.Valor ? t : max, highSpending[0]);
+                    highSpendingEl.textContent = `Você gastou ${formatCurrency(highest.Valor)} em ${highest.Descrição}, que é ${Math.round(highest.Valor / avgExpense)}x acima da sua média de gastos.`;
+                }
+                
+                const goalsStatusEl = document.getElementById('goals-status');
+                if (budgets.size === 0) {
+                    goalsStatusEl.textContent = 'Nenhuma meta definida. Adicione metas na aba "Metas" do arquivo Excel.';
+                } else {
+                    const expensesByCategory = {};
+                    expenses.forEach(t => {
+                        if (!expensesByCategory[t.Categoria]) {
+                            expensesByCategory[t.Categoria] = 0;
+                        }
+                        expensesByCategory[t.Categoria] += t.Valor;
+                    });
+                    
+                    const exceededBudgets = [];
+                    for (const [category, limit] of budgets) {
+                        const spent = expensesByCategory[category] || 0;
+                        if (spent > limit) {
+                            exceededBudgets.push({
+                                category,
+                                spent,
+                                limit,
+                                excess: spent - limit
+                            });
+                        }
+                    }
+                    
+                    if (exceededBudgets.length === 0) {
+                        goalsStatusEl.textContent = 'Todas as metas estão dentro do limite definido. Bom trabalho!';
+                    } else {
+                        const exceededList = exceededBudgets.map(b => 
+                            `${b.category} (${formatCurrency(b.excess)} acima)`
+                        ).join(', ');
+                        goalsStatusEl.textContent = `Meta(s) excedida(s): ${exceededList}.`;
+                    }
                 }
             }
-        }
-        
-        // Helper function to get top category
-        function getTopCategory(expenses) {
-            const byCategory = {};
-            expenses.forEach(t => {
-                byCategory[t.Categoria] = (byCategory[t.Categoria] || 0) + t.Valor;
-            });
             
-            let topCategory = { category: '', value: 0 };
-            let total = 0;
-            
-            for (const [category, value] of Object.entries(byCategory)) {
-                total += value;
-                if (value > topCategory.value) {
-                    topCategory = { category, value };
-                }
-            }
-            
-            return {
-                category: topCategory.category,
-                percentage: Math.round((topCategory.value / total) * 100)
-            };
-        }
-        
-        // Update filter categories dropdown
-        function updateFilterCategories() {
-            const categorySelect = document.getElementById('filter-category');
-            
-            // Get unique categories from transactions
-            const categories = [...new Set(filteredTransactions.map(t => t.Categoria))];
-            
-            // Clear existing options except the first one
-            while (categorySelect.options.length > 1) {
-                categorySelect.remove(1);
-            }
-            
-            // Add categories to dropdown
-            categories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category;
-                option.textContent = category;
-                categorySelect.appendChild(option);
-            });
-        }
-        
-        // Apply filters
-        function applyFilters() {
-            const period = document.getElementById('filter-period').value;
-            const category = document.getElementById('filter-category').value;
-            const type = document.getElementById('filter-type').value;
-            const minValue = parseFloat(document.getElementById('filter-value-min').value) || 0;
-            const maxValue = parseFloat(document.getElementById('filter-value-max').value) || Infinity;
-            
-            // Filter transactions
-            filteredTransactions = transactions.filter(t => {
-                // Filter by period (simplified - assumes all data is from the same period)
-                if (period === 'today') {
-                    const today = new Date().toLocaleDateString('pt-BR');
-                    if (t.Data !== today) return false;
-                } else if (period === 'month') {
-                    // Filter for current month based on data
-                    if (transactions.length > 0) {
-                        const firstDate = transactions[0].Data;
-                        const monthYear = firstDate.substring(firstDate.lastIndexOf('-'));
-                        if (!t.Data.includes(monthYear)) return false;
+            // Helper function to get top category
+            function getTopCategory(expenses) {
+                const byCategory = {};
+                expenses.forEach(t => {
+                    byCategory[t.Categoria] = (byCategory[t.Categoria] || 0) + t.Valor;
+                });
+                
+                let topCategory = { category: '', value: 0 };
+                let total = 0;
+                
+                for (const [category, value] of Object.entries(byCategory)) {
+                    total += value;
+                    if (value > topCategory.value) {
+                        topCategory = { category, value };
                     }
                 }
                 
-                // Filter by category
-                if (category !== 'all' && t.Categoria !== category) return false;
+                return {
+                    category: topCategory.category,
+                    percentage: Math.round((topCategory.value / total) * 100)
+                };
+            }
+            
+            // Update filter categories dropdown
+            function updateFilterCategories() {
+                const categorySelect = document.getElementById('filter-category');
                 
-                // Filter by type
-                if (type !== 'all' && t.Tipo !== type) return false;
+                const categories = [...new Set(filteredTransactions.map(t => t.Categoria))];
                 
-                // Filter by value range
-                if (t.Valor < minValue || t.Valor > maxValue) return false;
+                while (categorySelect.options.length > 1) {
+                    categorySelect.remove(1);
+                }
                 
-                return true;
-            });
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    categorySelect.appendChild(option);
+                });
+            }
+            
+            // Apply filters
+            function applyFilters() {
+                const period = document.getElementById('filter-period').value;
+                const category = document.getElementById('filter-category').value;
+                const type = document.getElementById('filter-type').value;
+                const minValue = parseFloat(document.getElementById('filter-value-min').value) || 0;
+                const maxValue = parseFloat(document.getElementById('filter-value-max').value) || Infinity;
+                
+                filteredTransactions = transactions.filter(t => {
+                    if (period === 'today') {
+                        const today = new Date().toLocaleDateString('pt-BR');
+                        if (t.Data !== today) return false;
+                    } else if (period === 'month') {
+                        if (transactions.length > 0) {
+                            const firstDate = transactions[0].Data;
+                            const monthYear = firstDate.substring(firstDate.lastIndexOf('-'));
+                            if (!t.Data.includes(monthYear)) return false;
+                        }
+                    }
+                    
+                    if (category !== 'all' && t.Categoria !== category) return false;
+                    
+                    if (type !== 'all' && t.Tipo !== type) return false;
+                    
+                    if (t.Valor < minValue || t.Valor > maxValue) return false;
+                    
+                    return true;
+                });
+                
+                updateDateRangeDisplay(period);
+                updateDashboard();
+            }
             
             // Update date range display
-            updateDateRangeDisplay(period);
-            
-            // Update dashboard with filtered data
-            updateDashboard();
-        }
-        
-        // Update date range display
-        function updateDateRangeDisplay(period) {
-            const display = document.getElementById('current-date-range');
-            
-            switch(period) {
-                case 'today':
-                    display.textContent = 'Hoje';
-                    break;
-                case 'week':
-                    display.textContent = 'Esta Semana';
-                    break;
-                case 'month':
-                    display.textContent = 'Este Mês';
-                    break;
-                case 'quarter':
-                    display.textContent = 'Este Trimestre';
-                    break;
-                case 'year':
-                    display.textContent = 'Este Ano';
-                    break;
-                case 'custom':
-                    display.textContent = 'Período Personalizado';
-                    break;
-                default:
-                    if (transactions.length > 0) {
-                        // Get date range from data
-                        const dates = transactions.map(t => t.Data).sort();
-                        if (dates.length > 0) {
-                            display.textContent = `${dates[0]} a ${dates[dates.length-1]}`;
+            function updateDateRangeDisplay(period) {
+                const display = document.getElementById('current-date-range');
+                
+                switch(period) {
+                    case 'today':
+                        display.textContent = 'Hoje';
+                        break;
+                    case 'week':
+                        display.textContent = 'Esta Semana';
+                        break;
+                    case 'month':
+                        display.textContent = 'Este Mês';
+                        break;
+                    case 'quarter':
+                        display.textContent = 'Este Trimestre';
+                        break;
+                    case 'year':
+                        display.textContent = 'Este Ano';
+                        break;
+                    case 'custom':
+                        display.textContent = 'Período Personalizado';
+                        break;
+                    default:
+                        if (transactions.length > 0) {
+                            const dates = transactions.map(t => t.Data).sort();
+                            if (dates.length > 0) {
+                                display.textContent = `${dates[0]} a ${dates[dates.length-1]}`;
+                            } else {
+                                display.textContent = 'Todo o Período';
+                            }
                         } else {
                             display.textContent = 'Todo o Período';
                         }
-                    } else {
-                        display.textContent = 'Todo o Período';
-                    }
+                }
             }
-        }
-        
-        // Handle file import
-        async function handleFileImport(file) {
-            const fileExtension = file.name.split('.').pop().toLowerCase();
             
-            try {
-                let result;
+            // Handle file import
+            async function handleFileImport(file) {
+                const fileExtension = file.name.split('.').pop().toLowerCase();
                 
-                if (fileExtension === 'csv') {
-                    const csvText = await readFileAsText(file);
-                    result = parseCSV(csvText);
-                } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
-                    const arrayBuffer = await readFileAsArrayBuffer(file);
-                    result = parseExcelFromArrayBuffer(arrayBuffer);
-                } else {
-                    showNotification('Formato de arquivo não suportado. Use CSV ou XLSX.', 'error');
-                    return;
+                try {
+                    let result;
+                    
+                    if (fileExtension === 'csv') {
+                        const csvText = await readFileAsText(file);
+                        result = parseCSV(csvText);
+                    } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+                        const arrayBuffer = await readFileAsArrayBuffer(file);
+                        result = parseExcelFromArrayBuffer(arrayBuffer);
+                    } else {
+                        showNotification('Formato de arquivo não suportado. Use CSV ou XLSX.', 'error');
+                        return;
+                    }
+                    
+                    const { transactions: newTransactions, budgets: newBudgets } = result;
+                    
+                    if (!validateData(newTransactions)) {
+                        showNotification('Formato de dados inválido. Verifique as colunas necessárias.', 'error');
+                        return;
+                    }
+                    
+                    transactions = [...newTransactions];
+                    filteredTransactions = [...transactions];
+                    
+                    budgets.clear();
+                    newBudgets.forEach(b => {
+                        budgets.set(b.categoria, b.limite);
+                    });
+                    
+                    toggleDashboardSections(true);
+                    resetFilters();
+                    updateDashboard();
+                    
+                    const budgetMsg = budgets.size > 0 ? ` e ${budgets.size} meta(s)` : '';
+                    showNotification(`Arquivo importado com sucesso! ${newTransactions.length} transação(ões)${budgetMsg} carregada(s).`, 'success');
+                    
+                    updateSyncStatus(true);
+                    
+                } catch (error) {
+                    showNotification(`Erro ao processar arquivo: ${error.message}`, 'error');
+                    console.error(error);
                 }
+            }
+            
+            // Read file as text
+            function readFileAsText(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = (e) => reject(new Error('Erro ao ler arquivo'));
+                    reader.readAsText(file);
+                });
+            }
+            
+            // Read file as array buffer
+            function readFileAsArrayBuffer(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = (e) => reject(new Error('Erro ao ler arquivo'));
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+            
+            // Reset filters
+            function resetFilters() {
+                document.getElementById('filter-period').value = 'all';
+                document.getElementById('filter-category').value = 'all';
+                document.getElementById('filter-type').value = 'all';
+                document.getElementById('filter-value-min').value = '';
+                document.getElementById('filter-value-max').value = '';
                 
-                const { transactions: newTransactions, budgets: newBudgets } = result;
-                
-                if (!validateData(newTransactions)) {
-                    showNotification('Formato de dados inválido. Verifique as colunas necessárias.', 'error');
-                    return;
-                }
-                
-                // Replace all existing data with new data
-                transactions = [...newTransactions];
                 filteredTransactions = [...transactions];
+                updateDateRangeDisplay('all');
+            }
+            
+            // Show notification
+            function showNotification(message, type) {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 1rem 1.5rem;
+                    border-radius: 8px;
+                    background-color: ${type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : '#ef4444'};
+                    color: white;
+                    font-weight: 500;
+                    z-index: 1000;
+                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                    animation: fadeIn 0.3s ease;
+                `;
+                notification.textContent = message;
                 
-                // Update budgets map
-                budgets.clear();
-                newBudgets.forEach(b => {
-                    budgets.set(b.categoria, b.limite);
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'fadeIn 0.3s ease reverse';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+            
+            // Format currency
+            function formatCurrency(value) {
+                return new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                }).format(value);
+            }
+            
+            // Initialize dashboard when page loads
+            document.addEventListener('DOMContentLoaded', () => {
+                toggleDashboardSections(false);
+                
+                const config = loadConfig();
+                applyConfigToUI(config);
+                
+                document.getElementById('apply-filters').addEventListener('click', applyFilters);
+                
+                document.getElementById('file-upload').addEventListener('change', function(e) {
+                    if (e.target.files.length > 0) {
+                        handleFileImport(e.target.files[0]);
+                        e.target.value = '';
+                    }
                 });
                 
-                // Show dashboard sections
-                toggleDashboardSections(true);
+                document.getElementById('btn-sync').addEventListener('click', () => loadFromWeb({ force: true }));
                 
-                // Reset filters
-                resetFilters();
+                document.getElementById('btn-save-config').addEventListener('click', function() {
+                    const newConfig = {
+                        spreadsheetUrl: document.getElementById('config-url').value,
+                        autoSync: document.getElementById('config-auto-sync').checked,
+                        syncInterval: parseInt(document.getElementById('config-interval').value),
+                        syncMode: document.getElementById('config-sync-mode').value,
+                        verifyChanges: document.getElementById('config-verify-change').checked,
+                        notifications: true
+                    };
+                    
+                    saveConfig(newConfig);
+                    applyConfigToUI(newConfig);
+                    showNotification('Configurações salvas com sucesso!', 'success');
+                });
                 
-                // Update dashboard
-                updateDashboard();
+                document.querySelector('.empty-state .btn-sync').addEventListener('click', () => loadFromWeb());
                 
-                // Show success message
-                const budgetMsg = budgets.size > 0 ? ` e ${budgets.size} meta(s)` : '';
-                showNotification(`Arquivo importado com sucesso! ${newTransactions.length} transação(ões)${budgetMsg} carregada(s).`, 'success');
+                document.addEventListener('mouseover', function(e) {
+                    if (e.target.closest('.stat-card')) {
+                        const card = e.target.closest('.stat-card');
+                        card.style.transform = 'translateY(-5px)';
+                        card.style.boxShadow = '0 10px 20px var(--shadow-dark)';
+                        card.style.borderColor = 'var(--primary)';
+                    }
+                }, true);
                 
-                // Atualizar status
-                updateSyncStatus(true);
+                document.addEventListener('mouseout', function(e) {
+                    if (e.target.closest('.stat-card')) {
+                        const card = e.target.closest('.stat-card');
+                        card.style.transform = 'translateY(0)';
+                        card.style.boxShadow = 'none';
+                        card.style.borderColor = 'var(--dark-border)';
+                    }
+                }, true);
                 
-            } catch (error) {
-                showNotification(`Erro ao processar arquivo: ${error.message}`, 'error');
-                console.error(error);
-            }
-        }
-        
-        // Read file as text
-        function readFileAsText(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = (e) => reject(new Error('Erro ao ler arquivo'));
-                reader.readAsText(file);
-            });
-        }
-        
-        // Read file as array buffer
-        function readFileAsArrayBuffer(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = (e) => reject(new Error('Erro ao ler arquivo'));
-                reader.readAsArrayBuffer(file);
-            });
-        }
-        
-        // Reset filters
-        function resetFilters() {
-            document.getElementById('filter-period').value = 'all';
-            document.getElementById('filter-category').value = 'all';
-            document.getElementById('filter-type').value = 'all';
-            document.getElementById('filter-value-min').value = '';
-            document.getElementById('filter-value-max').value = '';
-            
-            filteredTransactions = [...transactions];
-            updateDateRangeDisplay('all');
-        }
-        
-        // Show notification
-        function showNotification(message, type) {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 1rem 1.5rem;
-                border-radius: 8px;
-                background-color: ${type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : '#ef4444'};
-                color: white;
-                font-weight: 500;
-                z-index: 1000;
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-                animation: fadeIn 0.3s ease;
-            `;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            // Remove notification after 3 seconds
-            setTimeout(() => {
-                notification.style.animation = 'fadeIn 0.3s ease reverse';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-        }
-        
-        // Format currency
-        function formatCurrency(value) {
-            return new Intl.NumberFormat('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-            }).format(value);
-        }
-        
-        // Initialize dashboard when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            // Start with empty state
-            toggleDashboardSections(false);
-            
-            // Load and apply configuration
-            const config = loadConfig();
-            applyConfigToUI(config);
-            
-            // Set up event listeners
-            document.getElementById('apply-filters').addEventListener('click', applyFilters);
-            
-            document.getElementById('file-upload').addEventListener('change', function(e) {
-                if (e.target.files.length > 0) {
-                    handleFileImport(e.target.files[0]);
-                    // Reset file input to allow re-uploading the same file
-                    e.target.value = '';
+                setInterval(updateLastSyncDisplay, 60000);
+                
+                if (config.autoSync && config.syncMode !== 'manual') {
+                    setTimeout(() => {
+                        loadFromWeb();
+                    }, 2000);
                 }
             });
-            
-            // Sync button
-            document.getElementById('btn-sync').addEventListener('click', loadFromWeb);
-            
-            // Save config button
-            document.getElementById('btn-save-config').addEventListener('click', function() {
-                const newConfig = {
-                    spreadsheetUrl: document.getElementById('config-url').value,
-                    autoSync: document.getElementById('config-auto-sync').checked,
-                    syncInterval: parseInt(document.getElementById('config-interval').value) || 5
-                };
-                
-                saveConfig(newConfig);
-                applyConfigToUI(newConfig);
-                showNotification('Configurações salvas com sucesso!', 'success');
-                
-                // Se ativou auto sync, carregar dados agora
-                if (newConfig.autoSync && !dataLoaded) {
-                    loadFromWeb();
-                }
-            });
-            
-            // Also make the empty state button work
-            document.querySelector('.empty-state .btn-sync').addEventListener('click', loadFromWeb);
-            
-            // Add animation to stat cards on hover
-            document.addEventListener('mouseover', function(e) {
-                if (e.target.closest('.stat-card')) {
-                    const card = e.target.closest('.stat-card');
-                    card.style.transform = 'translateY(-5px)';
-                    card.style.boxShadow = '0 10px 20px var(--shadow-dark)';
-                    card.style.borderColor = 'var(--primary)';
-                }
-            }, true);
-            
-            document.addEventListener('mouseout', function(e) {
-                if (e.target.closest('.stat-card')) {
-                    const card = e.target.closest('.stat-card');
-                    card.style.transform = 'translateY(0)';
-                    card.style.boxShadow = 'none';
-                    card.style.borderColor = 'var(--dark-border)';
-                }
-            }, true);
-            
-            // Update last sync display periodically
-            setInterval(updateLastSyncDisplay, 60000); // Atualizar a cada minuto
-            
-            // Tentar carregar dados automaticamente se auto sync estiver ativado
-            if (config.autoSync) {
-                setTimeout(() => {
-                    loadFromWeb();
-                }, 1000);
-            }
-        });
     </script>
 </body>
 </html>
