@@ -207,10 +207,61 @@
             color: var(--dark-text-secondary);
         }
 
+        .sync-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-sync {
+            background: linear-gradient(90deg, var(--info), #3b82f6);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-sync:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-sync.syncing {
+            background: linear-gradient(90deg, var(--warning), #f59e0b);
+        }
+
+        .sync-status {
+            font-size: 0.8rem;
+            color: var(--dark-text-secondary);
+        }
+
+        .sync-status.online {
+            color: var(--success);
+        }
+
+        .sync-status.offline {
+            color: var(--danger);
+        }
+
+        .sync-timer {
+            font-size: 0.8rem;
+            color: var(--dark-text-secondary);
+            background-color: rgba(59, 130, 246, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
         .import-section {
             display: flex;
             align-items: center;
             gap: 1rem;
+            margin-top: 1rem;
         }
 
         .file-input-wrapper {
@@ -251,6 +302,87 @@
         .file-types {
             font-size: 0.8rem;
             color: var(--dark-text-secondary);
+        }
+
+        /* Config Section */
+        .config-section {
+            background-color: var(--dark-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--dark-border);
+            margin-bottom: 2rem;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .config-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .config-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--dark-text-secondary);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .config-input {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--dark-bg);
+            border: 1px solid var(--dark-border);
+            border-radius: 6px;
+            color: var(--dark-text);
+            font-size: 0.95rem;
+        }
+
+        .config-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--shadow);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+
+        .btn-save-config {
+            background: linear-gradient(90deg, var(--success), #10b981);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-save-config:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
         }
 
         /* Stats Cards */
@@ -667,6 +799,15 @@
             animation: pulse 2s infinite;
         }
 
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
         /* Responsive */
         @media (max-width: 1200px) {
             .charts-section {
@@ -700,7 +841,7 @@
                 gap: 1rem;
             }
             
-            .import-section, .date-range {
+            .sync-section, .date-range, .import-section {
                 width: 100%;
             }
             
@@ -717,7 +858,7 @@
                 overflow-x: auto;
             }
             
-            .insights-grid, .budget-grid {
+            .insights-grid, .budget-grid, .config-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -733,8 +874,11 @@
             </div>
             
             <nav class="nav-links">
-                <a href="#" class="nav-item active">
+                <a href="#" class="nav-item active" onclick="showSection('overview')">
                     <i class="fas fa-home"></i> Visão Geral
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('config')">
+                    <i class="fas fa-cog"></i> Configurações
                 </a>
                 <a href="#" class="nav-item">
                     <i class="fas fa-chart-pie"></i> Análises
@@ -747,9 +891,6 @@
                 </a>
                 <a href="#" class="nav-item">
                     <i class="fas fa-file-export"></i> Relatórios
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-cog"></i> Configurações
                 </a>
             </nav>
             
@@ -801,19 +942,83 @@
         
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Header -->
             <div class="header">
                 <h2>Dashboard Financeiro</h2>
                 
                 <div class="date-range">
                     <span id="current-date-range">Nenhum período selecionado</span>
-                    <div class="import-section">
-                        <div class="file-input-wrapper">
-                            <button class="btn-import">
-                                <i class="fas fa-file-import"></i> Importar Arquivo
-                            </button>
-                            <input type="file" id="file-upload" accept=".csv,.xlsx,.xls" />
+                    <div class="sync-section">
+                        <button class="btn-sync" id="btn-sync">
+                            <i class="fas fa-sync"></i> Sincronizar Agora
+                        </button>
+                        <div class="sync-status" id="sync-status">
+                            <i class="fas fa-circle"></i> <span id="sync-text">Offline</span>
                         </div>
-                        <div class="file-types">CSV ou XLSX</div>
+                        <div class="sync-timer" id="sync-timer">
+                            Próxima: 5:00
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Config Section (Hidden by default) -->
+            <div id="config-section" class="config-section" style="display: none;">
+                <div class="chart-title">
+                    <i class="fas fa-cog"></i> Configurações de Sincronização
+                </div>
+                <div class="config-grid">
+                    <div>
+                        <div class="config-group">
+                            <label for="config-url">URL da Planilha Publicada</label>
+                            <input type="url" id="config-url" class="config-input" 
+                                   value="https://docs.google.com/spreadsheets/d/e/2PACX-1vT__lQH2yV7BNhYIUJ-FLdJx-0vlicZ65jZjIIpEe4oZUGw0r26jHXE3MdjpCLS7heLx95_ApXz3OVu/pubhtml"
+                                   placeholder="Cole a URL da planilha publicada aqui">
+                        </div>
+                        
+                        <div class="config-group">
+                            <label for="config-interval">Intervalo de Atualização (minutos)</label>
+                            <input type="number" id="config-interval" class="config-input" 
+                                   value="5" min="1" max="60">
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="config-auto-sync" checked>
+                            <label for="config-auto-sync">Atualização Automática</label>
+                        </div>
+                        
+                        <button class="btn-save-config" id="btn-save-config">
+                            <i class="fas fa-save"></i> Salvar Configurações
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <div class="config-group">
+                            <label>Importar Arquivo Local</label>
+                            <div class="import-section">
+                                <div class="file-input-wrapper">
+                                    <button class="btn-import">
+                                        <i class="fas fa-file-import"></i> Importar Arquivo
+                                    </button>
+                                    <input type="file" id="file-upload" accept=".csv,.xlsx,.xls" />
+                                </div>
+                                <div class="file-types">CSV ou XLSX</div>
+                            </div>
+                        </div>
+                        
+                        <div class="config-group">
+                            <label>Última Sincronização</label>
+                            <div id="last-sync" style="color: var(--dark-text-secondary); padding: 0.5rem 0;">
+                                Nunca sincronizado
+                            </div>
+                        </div>
+                        
+                        <div class="config-group">
+                            <label>Status da Conexão</label>
+                            <div id="connection-status" style="color: var(--success); padding: 0.5rem 0;">
+                                <i class="fas fa-wifi"></i> Pronto para sincronizar
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -822,165 +1027,171 @@
             <div id="empty-state" class="empty-state fade-in">
                 <i class="fas fa-cloud-upload-alt"></i>
                 <h3>Nenhum dado carregado</h3>
-                <p>Importe um arquivo CSV ou Excel no formato correto para visualizar suas análises financeiras.</p>
-                <p><strong>Formato esperado:</strong> Data, Descrição, Valor, Categoria, Tipo, Timestamp</p>
-                <p><strong>Excel:</strong> A segunda aba "Metas" deve conter: Categoria, Valor_Limite</p>
-                <button class="btn-import" style="margin-top: 1.5rem;">
-                    <i class="fas fa-file-import"></i> Importar Primeiro Arquivo
-                </button>
-            </div>
-            
-            <!-- Stats Cards -->
-            <div class="stats-cards" id="stats-cards" style="display: none;">
-                <div class="stat-card fade-in">
-                    <div class="stat-header">
-                        <div class="stat-title">Saldo Atual</div>
-                        <div class="stat-icon">
-                            <i class="fas fa-wallet"></i>
-                        </div>
-                    </div>
-                    <div class="stat-value" id="current-balance">R$ 0,00</div>
-                    <div class="stat-change positive">
-                        <i class="fas fa-arrow-up"></i> <span id="balance-change">0%</span> vs mês anterior
-                    </div>
-                </div>
-                
-                <div class="stat-card fade-in" style="animation-delay: 0.1s;">
-                    <div class="stat-header">
-                        <div class="stat-title">Receitas Totais</div>
-                        <div class="stat-icon">
-                            <i class="fas fa-money-bill-wave"></i>
-                        </div>
-                    </div>
-                    <div class="stat-value" id="total-income">R$ 0,00</div>
-                    <div class="stat-change positive">
-                        <i class="fas fa-arrow-up"></i> <span id="income-change">0%</span> vs mês anterior
-                    </div>
-                </div>
-                
-                <div class="stat-card fade-in" style="animation-delay: 0.2s;">
-                    <div class="stat-header">
-                        <div class="stat-title">Despesas Totais</div>
-                        <div class="stat-icon">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                    </div>
-                    <div class="stat-value" id="total-expenses">R$ 0,00</div>
-                    <div class="stat-change negative">
-                        <i class="fas fa-arrow-down"></i> <span id="expenses-change">0%</span> vs mês anterior
-                    </div>
-                </div>
-                
-                <div class="stat-card fade-in" style="animation-delay: 0.3s;">
-                    <div class="stat-header">
-                        <div class="stat-title">Maior Despesa</div>
-                        <div class="stat-icon">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                    </div>
-                    <div class="stat-value" id="highest-expense">R$ 0,00</div>
-                    <div class="stat-change">
-                        <span id="highest-expense-category">Nenhuma</span>
-                    </div>
+                <p>Clique no botão "Sincronizar Agora" para carregar dados da planilha online ou importe um arquivo local.</p>
+                <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+                    <button class="btn-sync" onclick="loadFromWeb()">
+                        <i class="fas fa-sync"></i> Sincronizar Agora
+                    </button>
+                    <button class="btn-import" onclick="document.getElementById('file-upload').click()">
+                        <i class="fas fa-file-import"></i> Importar Arquivo
+                    </button>
                 </div>
             </div>
             
-            <!-- Budget Section -->
-            <div class="budget-section fade-in" id="budget-section" style="display: none; animation-delay: 0.1s;">
-                <div class="chart-title">
-                    <i class="fas fa-bullseye"></i> Controle de Metas por Categoria
-                </div>
-                <div class="budget-grid" id="budget-grid">
-                    <!-- Budget cards will be populated here -->
-                </div>
-            </div>
-            
-            <!-- Charts Section -->
-            <div class="charts-section" id="charts-section" style="display: none;">
-                <div class="chart-container fade-in">
-                    <div class="chart-title">
-                        <i class="fas fa-chart-line"></i> Evolução Financeira
-                    </div>
-                    <div class="chart-wrapper">
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="pie-container fade-in" style="animation-delay: 0.2s;">
-                    <div class="chart-title">
-                        <i class="fas fa-chart-pie"></i> Distribuição por Categoria
-                    </div>
-                    <div class="chart-wrapper">
-                        <canvas id="categoryChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Table Section -->
-            <div class="table-section fade-in" id="table-section" style="display: none; animation-delay: 0.3s;">
-                <div class="table-header">
-                    <div class="table-title">
-                        <i class="fas fa-list"></i> Transações Recentes
-                    </div>
-                    <div>
-                        <span id="transaction-count">0</span> transações
-                    </div>
-                </div>
-                <table class="transactions-table">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Descrição</th>
-                            <th>Categoria</th>
-                            <th>Tipo</th>
-                            <th>Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactions-body">
-                        <!-- Transactions will be populated here -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Insights Section -->
-            <div class="insights-section fade-in" id="insights-section" style="display: none; animation-delay: 0.4s;">
-                <div class="chart-title">
-                    <i class="fas fa-lightbulb"></i> Insights Automatizados
-                </div>
-                <div class="insights-grid">
-                    <div class="insight-card">
-                        <div class="insight-header">
-                            <div class="insight-icon">
-                                <i class="fas fa-chart-bar"></i>
+            <!-- Overview Section (Visible by default) -->
+            <div id="overview-section">
+                <!-- Stats Cards -->
+                <div class="stats-cards" id="stats-cards" style="display: none;">
+                    <div class="stat-card fade-in">
+                        <div class="stat-header">
+                            <div class="stat-title">Saldo Atual</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-wallet"></i>
                             </div>
-                            <div class="insight-title">Padrão de Gastos</div>
                         </div>
-                        <div class="insight-text" id="spending-pattern">
-                            Carregue dados para análise de padrões...
+                        <div class="stat-value" id="current-balance">R$ 0,00</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> <span id="balance-change">0%</span> vs mês anterior
                         </div>
                     </div>
                     
-                    <div class="insight-card warning">
-                        <div class="insight-header">
-                            <div class="insight-icon">
-                                <i class="fas fa-exclamation-circle"></i>
+                    <div class="stat-card fade-in" style="animation-delay: 0.1s;">
+                        <div class="stat-header">
+                            <div class="stat-title">Receitas Totais</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-money-bill-wave"></i>
                             </div>
-                            <div class="insight-title">Gastos Elevados</div>
                         </div>
-                        <div class="insight-text" id="high-spending">
-                            Nenhum dado disponível para análise.
+                        <div class="stat-value" id="total-income">R$ 0,00</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> <span id="income-change">0%</span> vs mês anterior
                         </div>
                     </div>
                     
-                    <div class="insight-card info">
-                        <div class="insight-header">
-                            <div class="insight-icon">
-                                <i class="fas fa-bullseye"></i>
+                    <div class="stat-card fade-in" style="animation-delay: 0.2s;">
+                        <div class="stat-header">
+                            <div class="stat-title">Despesas Totais</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-shopping-cart"></i>
                             </div>
-                            <div class="insight-title">Status das Metas</div>
                         </div>
-                        <div class="insight-text" id="goals-status">
-                            Nenhuma meta definida ou dados insuficientes.
+                        <div class="stat-value" id="total-expenses">R$ 0,00</div>
+                        <div class="stat-change negative">
+                            <i class="fas fa-arrow-down"></i> <span id="expenses-change">0%</span> vs mês anterior
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card fade-in" style="animation-delay: 0.3s;">
+                        <div class="stat-header">
+                            <div class="stat-title">Maior Despesa</div>
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="highest-expense">R$ 0,00</div>
+                        <div class="stat-change">
+                            <span id="highest-expense-category">Nenhuma</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Budget Section -->
+                <div class="budget-section fade-in" id="budget-section" style="display: none; animation-delay: 0.1s;">
+                    <div class="chart-title">
+                        <i class="fas fa-bullseye"></i> Controle de Metas por Categoria
+                    </div>
+                    <div class="budget-grid" id="budget-grid">
+                        <!-- Budget cards will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Charts Section -->
+                <div class="charts-section" id="charts-section" style="display: none;">
+                    <div class="chart-container fade-in">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-line"></i> Evolução Financeira
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="pie-container fade-in" style="animation-delay: 0.2s;">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-pie"></i> Distribuição por Categoria
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Table Section -->
+                <div class="table-section fade-in" id="table-section" style="display: none; animation-delay: 0.3s;">
+                    <div class="table-header">
+                        <div class="table-title">
+                            <i class="fas fa-list"></i> Transações Recentes
+                        </div>
+                        <div>
+                            <span id="transaction-count">0</span> transações
+                        </div>
+                    </div>
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-body">
+                            <!-- Transactions will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Insights Section -->
+                <div class="insights-section fade-in" id="insights-section" style="display: none; animation-delay: 0.4s;">
+                    <div class="chart-title">
+                        <i class="fas fa-lightbulb"></i> Insights Automatizados
+                    </div>
+                    <div class="insights-grid">
+                        <div class="insight-card">
+                            <div class="insight-header">
+                                <div class="insight-icon">
+                                    <i class="fas fa-chart-bar"></i>
+                                </div>
+                                <div class="insight-title">Padrão de Gastos</div>
+                            </div>
+                            <div class="insight-text" id="spending-pattern">
+                                Carregue dados para análise de padrões...
+                            </div>
+                        </div>
+                        
+                        <div class="insight-card warning">
+                            <div class="insight-header">
+                                <div class="insight-icon">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                </div>
+                                <div class="insight-title">Gastos Elevados</div>
+                            </div>
+                            <div class="insight-text" id="high-spending">
+                                Nenhum dado disponível para análise.
+                            </div>
+                        </div>
+                        
+                        <div class="insight-card info">
+                            <div class="insight-header">
+                                <div class="insight-icon">
+                                    <i class="fas fa-bullseye"></i>
+                                </div>
+                                <div class="insight-title">Status das Metas</div>
+                            </div>
+                            <div class="insight-text" id="goals-status">
+                                Nenhuma meta definida ou dados insuficientes.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -995,138 +1206,287 @@
         let filteredTransactions = [];
         let charts = {};
         let dataLoaded = false;
+        let syncInterval = null;
+        let syncTimerInterval = null;
+        let timeUntilNextSync = 300; // 5 minutos em segundos
+        let lastSyncTime = null;
+        let isSyncing = false;
         
-        // Parse Excel file
-        function parseExcelFile(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
+        // Configurações padrão
+        const defaultConfig = {
+            spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT__lQH2yV7BNhYIUJ-FLdJx-0vlicZ65jZjIIpEe4oZUGw0r26jHXE3MdjpCLS7heLx95_ApXz3OVu/pubhtml',
+            autoSync: true,
+            syncInterval: 5 // minutos
+        };
+        
+        // Carregar configurações salvas
+        function loadConfig() {
+            const savedConfig = localStorage.getItem('finDashConfig');
+            if (savedConfig) {
+                return JSON.parse(savedConfig);
+            }
+            return defaultConfig;
+        }
+        
+        // Salvar configurações
+        function saveConfig(config) {
+            localStorage.setItem('finDashConfig', JSON.stringify(config));
+        }
+        
+        // Aplicar configurações à interface
+        function applyConfigToUI(config) {
+            document.getElementById('config-url').value = config.spreadsheetUrl;
+            document.getElementById('config-interval').value = config.syncInterval;
+            document.getElementById('config-auto-sync').checked = config.autoSync;
+            
+            if (config.autoSync) {
+                startAutoSync(config.syncInterval);
+            }
+        }
+        
+        // Converter URL do Google Sheets para formato de download
+        function convertToDownloadUrl(viewUrl) {
+            // Se já for uma URL de download, retornar como está
+            if (viewUrl.includes('pub?output=xlsx') || viewUrl.includes('export?format=xlsx')) {
+                return viewUrl;
+            }
+            
+            // Converter URL de visualização para URL de download
+            if (viewUrl.includes('docs.google.com/spreadsheets/d/')) {
+                // Formato: https://docs.google.com/spreadsheets/d/[ID]/edit?usp=sharing
+                const match = viewUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+                if (match) {
+                    const fileId = match[1];
+                    return `https://docs.google.com/spreadsheets/d/${fileId}/export?format=xlsx`;
+                }
+            } else if (viewUrl.includes('docs.google.com/spreadsheets/d/e/')) {
+                // Formato publicado: https://docs.google.com/spreadsheets/d/e/[ID]/pubhtml
+                const match = viewUrl.match(/\/spreadsheets\/d\/e\/([a-zA-Z0-9_-]+)/);
+                if (match) {
+                    const fileId = match[1];
+                    return `https://docs.google.com/spreadsheets/d/e/${fileId}/pub?output=xlsx`;
+                }
+            }
+            
+            // Se não conseguir converter, retornar a URL original
+            return viewUrl;
+        }
+        
+        // Baixar planilha da web
+        async function downloadSpreadsheet(url) {
+            try {
+                // Converter para URL de download
+                const downloadUrl = convertToDownloadUrl(url);
                 
-                reader.onload = function(e) {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        
-                        // Processar a aba de transações (Página1)
-                        let transactionsSheet = workbook.Sheets['Página1'];
-                        if (!transactionsSheet) {
-                            // Tentar encontrar a primeira aba que não seja "Metas"
-                            const sheetNames = workbook.SheetNames;
-                            const transactionSheetName = sheetNames.find(name => name.toLowerCase() !== 'metas');
-                            if (transactionSheetName) {
-                                transactionsSheet = workbook.Sheets[transactionSheetName];
-                            }
-                        }
-                        
-                        if (!transactionsSheet) {
-                            reject(new Error('Não foi possível encontrar a aba de transações.'));
-                            return;
-                        }
-                        
-                        // Converter a aba de transações para JSON
-                        const transactionsData = XLSX.utils.sheet_to_json(transactionsSheet, {
-                            header: 1,
-                            raw: false,
-                            dateNF: 'yyyy-mm-dd'
-                        });
-                        
-                        // Processar cabeçalho e dados
-                        const headers = transactionsData[0];
-                        const transactionsRows = transactionsData.slice(1);
-                        
-                        // Encontrar índices das colunas
-                        const dataIndex = headers.findIndex(h => h.toLowerCase().includes('data'));
-                        const descricaoIndex = headers.findIndex(h => h.toLowerCase().includes('descrição') || h.toLowerCase().includes('descricao'));
-                        const valorIndex = headers.findIndex(h => h.toLowerCase().includes('valor'));
-                        const categoriaIndex = headers.findIndex(h => h.toLowerCase().includes('categoria'));
-                        const tipoIndex = headers.findIndex(h => h.toLowerCase().includes('tipo'));
-                        const timestampIndex = headers.findIndex(h => h.toLowerCase().includes('timestamp'));
-                        
-                        // Validar colunas necessárias
-                        if (dataIndex === -1 || descricaoIndex === -1 || valorIndex === -1 || categoriaIndex === -1 || tipoIndex === -1) {
-                            reject(new Error('Formato de arquivo inválido. Colunas necessárias não encontradas.'));
-                            return;
-                        }
-                        
-                        // Converter para formato padrão
-                        const formattedTransactions = transactionsRows
-                            .filter(row => row && row.length > 0)
-                            .map(row => {
-                                // Formatar data (remover hora se existir)
-                                let dataStr = row[dataIndex];
-                                if (dataStr instanceof Date) {
-                                    dataStr = dataStr.toISOString().split('T')[0];
-                                } else if (typeof dataStr === 'string') {
-                                    // Tentar extrair apenas a data
-                                    const dateMatch = dataStr.match(/(\d{4}-\d{2}-\d{2})/);
-                                    if (dateMatch) {
-                                        dataStr = dateMatch[1];
-                                    }
-                                }
-                                
-                                // Converter para formato DD-MM-YYYY
-                                if (dataStr && dataStr.includes('-')) {
-                                    const parts = dataStr.split('-');
-                                    if (parts.length === 3) {
-                                        // Assumir formato YYYY-MM-DD
-                                        dataStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                                    }
-                                }
-                                
-                                return {
-                                    Data: dataStr || '',
-                                    Descrição: row[descricaoIndex] || '',
-                                    Valor: parseFloat(row[valorIndex]) || 0,
-                                    Categoria: row[categoriaIndex] || '',
-                                    Tipo: row[tipoIndex] || '',
-                                    Timestamp: timestampIndex !== -1 ? row[timestampIndex] : ''
-                                };
-                            })
-                            .filter(t => t.Data && t.Descrição); // Filtrar linhas vazias
-                        
-                        // Processar a aba de metas
-                        let budgetsData = [];
-                        const metasSheet = workbook.Sheets['Metas'];
-                        if (metasSheet) {
-                            const metasJson = XLSX.utils.sheet_to_json(metasSheet, { header: 1 });
-                            if (metasJson.length > 0) {
-                                const metasHeaders = metasJson[0];
-                                const categoriaIdx = metasHeaders.findIndex(h => 
-                                    h.toLowerCase().includes('categoria')
-                                );
-                                const limiteIdx = metasHeaders.findIndex(h => 
-                                    h.toLowerCase().includes('limite') || 
-                                    h.toLowerCase().includes('valor_limite') ||
-                                    h.toLowerCase().includes('valor limite')
-                                );
-                                
-                                if (categoriaIdx !== -1 && limiteIdx !== -1) {
-                                    budgetsData = metasJson.slice(1)
-                                        .filter(row => row && row.length > 0)
-                                        .map(row => ({
-                                            categoria: row[categoriaIdx],
-                                            limite: parseFloat(row[limiteIdx]) || 0
-                                        }))
-                                        .filter(b => b.categoria && b.limite > 0);
-                                }
-                            }
-                        }
-                        
-                        resolve({
-                            transactions: formattedTransactions,
-                            budgets: budgetsData
-                        });
-                        
-                    } catch (error) {
-                        reject(error);
+                // Fazer requisição
+                const response = await fetch(downloadUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+                
+                // Obter dados como array buffer
+                const arrayBuffer = await response.arrayBuffer();
+                return arrayBuffer;
+            } catch (error) {
+                console.error('Erro ao baixar planilha:', error);
+                throw error;
+            }
+        }
+        
+        // Parse Excel file from array buffer
+        function parseExcelFromArrayBuffer(arrayBuffer) {
+            try {
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                
+                // Processar a aba de transações (Página1)
+                let transactionsSheet = workbook.Sheets['Página1'];
+                if (!transactionsSheet) {
+                    // Tentar encontrar a primeira aba que não seja "Metas"
+                    const sheetNames = workbook.SheetNames;
+                    const transactionSheetName = sheetNames.find(name => 
+                        name.toLowerCase() !== 'metas' && 
+                        name.toLowerCase() !== 'metas orçamento'
+                    );
+                    if (transactionSheetName) {
+                        transactionsSheet = workbook.Sheets[transactionSheetName];
                     }
+                }
+                
+                if (!transactionsSheet) {
+                    throw new Error('Não foi possível encontrar a aba de transações.');
+                }
+                
+                // Converter a aba de transações para JSON
+                const transactionsData = XLSX.utils.sheet_to_json(transactionsSheet, {
+                    header: 1,
+                    raw: false,
+                    dateNF: 'yyyy-mm-dd'
+                });
+                
+                // Processar cabeçalho e dados
+                const headers = transactionsData[0];
+                const transactionsRows = transactionsData.slice(1);
+                
+                // Encontrar índices das colunas
+                const dataIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('data'));
+                const descricaoIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('descrição') || h && h.toString().toLowerCase().includes('descricao'));
+                const valorIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('valor'));
+                const categoriaIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('categoria'));
+                const tipoIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('tipo'));
+                const timestampIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('timestamp'));
+                
+                // Validar colunas necessárias
+                if (dataIndex === -1 || descricaoIndex === -1 || valorIndex === -1 || categoriaIndex === -1 || tipoIndex === -1) {
+                    throw new Error('Formato de arquivo inválido. Colunas necessárias não encontradas.');
+                }
+                
+                // Converter para formato padrão
+                const formattedTransactions = transactionsRows
+                    .filter(row => row && row.length > 0)
+                    .map(row => {
+                        // Formatar data (remover hora se existir)
+                        let dataStr = row[dataIndex];
+                        if (dataStr instanceof Date) {
+                            dataStr = dataStr.toISOString().split('T')[0];
+                        } else if (typeof dataStr === 'string') {
+                            // Tentar extrair apenas a data
+                            const dateMatch = dataStr.match(/(\d{4}-\d{2}-\d{2})/);
+                            if (dateMatch) {
+                                dataStr = dateMatch[1];
+                            }
+                        }
+                        
+                        // Converter para formato DD-MM-YYYY
+                        if (dataStr && dataStr.includes('-')) {
+                            const parts = dataStr.split('-');
+                            if (parts.length === 3) {
+                                // Assumir formato YYYY-MM-DD
+                                dataStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                            }
+                        }
+                        
+                        return {
+                            Data: dataStr || '',
+                            Descrição: row[descricaoIndex] || '',
+                            Valor: parseFloat(row[valorIndex]) || 0,
+                            Categoria: row[categoriaIndex] || '',
+                            Tipo: row[tipoIndex] || '',
+                            Timestamp: timestampIndex !== -1 ? row[timestampIndex] : ''
+                        };
+                    })
+                    .filter(t => t.Data && t.Descrição); // Filtrar linhas vazias
+                
+                // Processar a aba de metas
+                let budgetsData = [];
+                const metasSheet = workbook.Sheets['Metas'] || workbook.Sheets['Metas Orçamento'];
+                if (metasSheet) {
+                    const metasJson = XLSX.utils.sheet_to_json(metasSheet, { header: 1 });
+                    if (metasJson.length > 0) {
+                        const metasHeaders = metasJson[0];
+                        const categoriaIdx = metasHeaders.findIndex(h => 
+                            h && h.toString().toLowerCase().includes('categoria')
+                        );
+                        const limiteIdx = metasHeaders.findIndex(h => 
+                            h && (h.toString().toLowerCase().includes('limite') || 
+                                 h.toString().toLowerCase().includes('valor_limite') ||
+                                 h.toString().toLowerCase().includes('valor limite'))
+                        );
+                        
+                        if (categoriaIdx !== -1 && limiteIdx !== -1) {
+                            budgetsData = metasJson.slice(1)
+                                .filter(row => row && row.length > 0)
+                                .map(row => ({
+                                    categoria: row[categoriaIdx],
+                                    limite: parseFloat(row[limiteIdx]) || 0
+                                }))
+                                .filter(b => b.categoria && b.limite > 0);
+                        }
+                    }
+                }
+                
+                return {
+                    transactions: formattedTransactions,
+                    budgets: budgetsData
                 };
                 
-                reader.onerror = function() {
-                    reject(new Error('Erro ao ler o arquivo Excel.'));
-                };
+            } catch (error) {
+                console.error('Erro ao processar Excel:', error);
+                throw error;
+            }
+        }
+        
+        // Load data from web
+        async function loadFromWeb() {
+            if (isSyncing) return;
+            
+            const config = loadConfig();
+            const url = config.spreadsheetUrl;
+            
+            if (!url) {
+                showNotification('URL da planilha não configurada.', 'error');
+                return;
+            }
+            
+            isSyncing = true;
+            const syncBtn = document.getElementById('btn-sync');
+            const originalText = syncBtn.innerHTML;
+            syncBtn.innerHTML = '<i class="fas fa-sync spin"></i> Sincronizando...';
+            syncBtn.classList.add('syncing');
+            
+            try {
+                // Baixar planilha
+                const arrayBuffer = await downloadSpreadsheet(url);
                 
-                reader.readAsArrayBuffer(file);
-            });
+                // Processar dados
+                const result = parseExcelFromArrayBuffer(arrayBuffer);
+                const { transactions: newTransactions, budgets: newBudgets } = result;
+                
+                if (!validateData(newTransactions)) {
+                    throw new Error('Formato de dados inválido.');
+                }
+                
+                // Atualizar dados
+                transactions = [...newTransactions];
+                filteredTransactions = [...transactions];
+                
+                // Atualizar orçamentos
+                budgets.clear();
+                newBudgets.forEach(b => {
+                    budgets.set(b.categoria, b.limite);
+                });
+                
+                // Atualizar interface
+                toggleDashboardSections(true);
+                resetFilters();
+                updateDashboard();
+                
+                // Atualizar última sincronização
+                lastSyncTime = new Date();
+                updateLastSyncDisplay();
+                
+                // Mostrar mensagem de sucesso
+                const budgetMsg = budgets.size > 0 ? ` e ${budgets.size} meta(s)` : '';
+                showNotification(`Sincronizado com sucesso! ${newTransactions.length} transação(ões)${budgetMsg} carregada(s).`, 'success');
+                
+                // Atualizar status
+                updateSyncStatus(true);
+                
+            } catch (error) {
+                console.error('Erro ao carregar da web:', error);
+                showNotification(`Erro ao sincronizar: ${error.message}`, 'error');
+                updateSyncStatus(false);
+                
+            } finally {
+                isSyncing = false;
+                syncBtn.innerHTML = originalText;
+                syncBtn.classList.remove('syncing');
+                
+                // Reiniciar timer de sincronização
+                if (config.autoSync) {
+                    resetSyncTimer();
+                }
+            }
         }
         
         // Parse CSV data
@@ -1195,6 +1555,7 @@
         // Show/hide dashboard sections
         function toggleDashboardSections(show) {
             const emptyState = document.getElementById('empty-state');
+            const overviewSection = document.getElementById('overview-section');
             const statsCards = document.getElementById('stats-cards');
             const budgetSection = document.getElementById('budget-section');
             const chartsSection = document.getElementById('charts-section');
@@ -1203,6 +1564,7 @@
             
             if (show) {
                 emptyState.style.display = 'none';
+                overviewSection.style.display = 'block';
                 statsCards.style.display = 'grid';
                 budgetSection.style.display = 'block';
                 chartsSection.style.display = 'grid';
@@ -1211,12 +1573,120 @@
                 dataLoaded = true;
             } else {
                 emptyState.style.display = 'block';
+                overviewSection.style.display = 'none';
                 statsCards.style.display = 'none';
                 budgetSection.style.display = 'none';
                 chartsSection.style.display = 'none';
                 tableSection.style.display = 'none';
                 insightsSection.style.display = 'none';
                 dataLoaded = false;
+            }
+        }
+        
+        // Show/hide config section
+        function showSection(sectionName) {
+            const configSection = document.getElementById('config-section');
+            const overviewSection = document.getElementById('overview-section');
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            navItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            if (sectionName === 'config') {
+                configSection.style.display = 'block';
+                overviewSection.style.display = 'none';
+                document.querySelector('.nav-item:nth-child(2)').classList.add('active');
+            } else {
+                configSection.style.display = 'none';
+                overviewSection.style.display = 'block';
+                document.querySelector('.nav-item:nth-child(1)').classList.add('active');
+            }
+        }
+        
+        // Update last sync display
+        function updateLastSyncDisplay() {
+            const lastSyncEl = document.getElementById('last-sync');
+            if (lastSyncTime) {
+                const now = new Date();
+                const diffMs = now - lastSyncTime;
+                const diffMins = Math.floor(diffMs / 60000);
+                
+                if (diffMins < 1) {
+                    lastSyncEl.textContent = 'Agora mesmo';
+                } else if (diffMins === 1) {
+                    lastSyncEl.textContent = 'Há 1 minuto';
+                } else {
+                    lastSyncEl.textContent = `Há ${diffMins} minutos`;
+                }
+                
+                lastSyncEl.style.color = 'var(--success)';
+            } else {
+                lastSyncEl.textContent = 'Nunca sincronizado';
+                lastSyncEl.style.color = 'var(--dark-text-secondary)';
+            }
+        }
+        
+        // Update sync status
+        function updateSyncStatus(online) {
+            const syncStatusEl = document.getElementById('sync-status');
+            const syncTextEl = document.getElementById('sync-text');
+            
+            if (online) {
+                syncStatusEl.className = 'sync-status online';
+                syncTextEl.textContent = 'Online';
+                syncStatusEl.querySelector('i').style.color = 'var(--success)';
+            } else {
+                syncStatusEl.className = 'sync-status offline';
+                syncTextEl.textContent = 'Offline';
+                syncStatusEl.querySelector('i').style.color = 'var(--danger)';
+            }
+        }
+        
+        // Start auto sync timer
+        function startAutoSync(intervalMinutes) {
+            // Limpar intervalos anteriores
+            if (syncInterval) {
+                clearInterval(syncInterval);
+            }
+            if (syncTimerInterval) {
+                clearInterval(syncTimerInterval);
+            }
+            
+            // Converter minutos para segundos
+            timeUntilNextSync = intervalMinutes * 60;
+            
+            // Iniciar contador
+            updateSyncTimer();
+            syncTimerInterval = setInterval(updateSyncTimer, 1000);
+            
+            // Iniciar sincronização automática
+            syncInterval = setInterval(() => {
+                if (!isSyncing) {
+                    loadFromWeb();
+                }
+            }, intervalMinutes * 60000);
+        }
+        
+        // Reset sync timer
+        function resetSyncTimer() {
+            const config = loadConfig();
+            timeUntilNextSync = config.syncInterval * 60;
+            updateSyncTimer();
+        }
+        
+        // Update sync timer display
+        function updateSyncTimer() {
+            const syncTimerEl = document.getElementById('sync-timer');
+            
+            if (timeUntilNextSync <= 0) {
+                syncTimerEl.textContent = 'Sincronizando...';
+                resetSyncTimer();
+            } else {
+                const minutes = Math.floor(timeUntilNextSync / 60);
+                const seconds = timeUntilNextSync % 60;
+                syncTimerEl.textContent = `Próxima: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                timeUntilNextSync--;
             }
         }
         
@@ -1982,7 +2452,8 @@
                     const csvText = await readFileAsText(file);
                     result = parseCSV(csvText);
                 } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
-                    result = await parseExcelFile(file);
+                    const arrayBuffer = await readFileAsArrayBuffer(file);
+                    result = parseExcelFromArrayBuffer(arrayBuffer);
                 } else {
                     showNotification('Formato de arquivo não suportado. Use CSV ou XLSX.', 'error');
                     return;
@@ -2018,6 +2489,9 @@
                 const budgetMsg = budgets.size > 0 ? ` e ${budgets.size} meta(s)` : '';
                 showNotification(`Arquivo importado com sucesso! ${newTransactions.length} transação(ões)${budgetMsg} carregada(s).`, 'success');
                 
+                // Atualizar status
+                updateSyncStatus(true);
+                
             } catch (error) {
                 showNotification(`Erro ao processar arquivo: ${error.message}`, 'error');
                 console.error(error);
@@ -2031,6 +2505,16 @@
                 reader.onload = (e) => resolve(e.target.result);
                 reader.onerror = (e) => reject(new Error('Erro ao ler arquivo'));
                 reader.readAsText(file);
+            });
+        }
+        
+        // Read file as array buffer
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(new Error('Erro ao ler arquivo'));
+                reader.readAsArrayBuffer(file);
             });
         }
         
@@ -2089,6 +2573,10 @@
             // Start with empty state
             toggleDashboardSections(false);
             
+            // Load and apply configuration
+            const config = loadConfig();
+            applyConfigToUI(config);
+            
             // Set up event listeners
             document.getElementById('apply-filters').addEventListener('click', applyFilters);
             
@@ -2100,10 +2588,29 @@
                 }
             });
             
-            // Also make the empty state button work
-            document.querySelector('.empty-state .btn-import').addEventListener('click', function() {
-                document.getElementById('file-upload').click();
+            // Sync button
+            document.getElementById('btn-sync').addEventListener('click', loadFromWeb);
+            
+            // Save config button
+            document.getElementById('btn-save-config').addEventListener('click', function() {
+                const newConfig = {
+                    spreadsheetUrl: document.getElementById('config-url').value,
+                    autoSync: document.getElementById('config-auto-sync').checked,
+                    syncInterval: parseInt(document.getElementById('config-interval').value) || 5
+                };
+                
+                saveConfig(newConfig);
+                applyConfigToUI(newConfig);
+                showNotification('Configurações salvas com sucesso!', 'success');
+                
+                // Se ativou auto sync, carregar dados agora
+                if (newConfig.autoSync && !dataLoaded) {
+                    loadFromWeb();
+                }
             });
+            
+            // Also make the empty state button work
+            document.querySelector('.empty-state .btn-sync').addEventListener('click', loadFromWeb);
             
             // Add animation to stat cards on hover
             document.addEventListener('mouseover', function(e) {
@@ -2124,20 +2631,15 @@
                 }
             }, true);
             
-            // Add pulse animation to import button
-            const importBtn = document.querySelector('.btn-import');
-            importBtn.classList.add('pulse');
+            // Update last sync display periodically
+            setInterval(updateLastSyncDisplay, 60000); // Atualizar a cada minuto
             
-            // Stop pulse on hover
-            importBtn.addEventListener('mouseenter', function() {
-                this.classList.remove('pulse');
-            });
-            
-            importBtn.addEventListener('mouseleave', function() {
+            // Tentar carregar dados automaticamente se auto sync estiver ativado
+            if (config.autoSync) {
                 setTimeout(() => {
-                    this.classList.add('pulse');
+                    loadFromWeb();
                 }, 1000);
-            });
+            }
         });
     </script>
 </body>
